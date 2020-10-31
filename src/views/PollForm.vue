@@ -41,6 +41,7 @@ import Spinner from '@/components/Spinner.vue';
 import Alert from '@/components/Alert.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
+import analytics from '@/gateways/analytics';
 import { Poll } from '@/models';
 
 @Component({
@@ -70,6 +71,7 @@ export default class PollForm extends Vue {
         author: auth.currentUser ? auth.currentUser.uid : '',
       };
       const { id } = await database.collection('polls').add(poll);
+      analytics.logEvent('action', { name: 'create_poll', user: auth.currentUser?.uid });
       this.$router.push({
         name: 'polls-id',
         params: { id },
@@ -77,7 +79,7 @@ export default class PollForm extends Vue {
     } catch (err) {
       this.loading = false;
       this.error = true;
-      console.error(err);
+      analytics.logEvent('error', { name: 'create_poll', user: auth.currentUser?.uid, error: err });
     }
   }
 }

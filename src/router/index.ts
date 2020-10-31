@@ -2,6 +2,7 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Home from '@/views/Home.vue';
 import auth from '@/gateways/authentication';
+import analytics from '@/gateways/analytics';
 
 Vue.use(VueRouter);
 
@@ -51,8 +52,10 @@ const router = new VueRouter({
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   if (requiresAuth && !auth.currentUser) {
+    analytics.logEvent('view', { name: 'login' });
     next({ name: 'login', params: { nextUrl: to.fullPath } });
   } else {
+    analytics.logEvent('view', { name: to.name, user: auth.currentUser?.uid });
     next();
   }
 });

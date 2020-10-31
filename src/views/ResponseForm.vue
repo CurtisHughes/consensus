@@ -21,6 +21,7 @@ import { CalendarEventCollection, CalendarDate } from '@/components/DatePicker/m
 import ShareTextButton from '@/components/ShareTextButton.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
+import analytics from '@/gateways/analytics';
 import {
   Poll, Response, Document, DateValue,
 } from '@/models';
@@ -76,22 +77,28 @@ export default class ResponseForm extends Vue {
   }
 
   private async toggleResponse(date: CalendarDate) {
-    const existing = this.responses
-      .find(({ author, value: { day, month, year } }) => (
-        author === (auth.currentUser && auth.currentUser.uid)
-          && day === date.day
-          && month === date.month
-          && year === date.year
-      ));
-    if (existing) {
-      await database.collection('polls').doc(this.poll.id).collection('responses').doc(existing.id)
-        .delete();
-    } else {
-      const response: Response<DateValue> = {
-        author: auth.currentUser ? auth.currentUser.uid : '',
-        value: date,
-      };
-      await database.collection('polls').doc(this.poll.id).collection('responses').add(response);
+    try {
+      const existing = this.responses
+        .find(({ author, value: { day, month, year } }) => (
+          author === (auth.currentUser && auth.currentUser.uid)
+            && day === date.day
+            && month === date.month
+            && year === date.year
+        ));
+      if (existing) {
+        await database.collection('polls').doc(this.poll.id).collection('responses').doc(existing.id)
+          .delete();
+        analytics.logEvent('action', { name: 'delete_response', user: auth.currentUser?.uid });
+      } else {
+        const response: Response<DateValue> = {
+          author: auth.currentUser ? auth.currentUser.uid : '',
+          value: date,
+        };
+        await database.collection('polls').doc(this.poll.id).collection('responses').add(response);
+        analytics.logEvent('action', { name: 'create_response', user: auth.currentUser?.uid });
+      }
+    } catch (err) {
+      analytics.logEvent('error', { name: 'toggle_response', user: auth.currentUser?.uid, error: err });
     }
   }
 
