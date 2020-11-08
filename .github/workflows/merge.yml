@@ -1,0 +1,25 @@
+name: Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-npm-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-npm-${{ env.cache-name }}
+            ${{ runner.OS }}-npm-
+      - run: yarn
+      - run: yarn build
+      - run: yarn firebase deploy --token ${{ secrets.FIREBASE_TOKEN }} --project consensus-fcf99
