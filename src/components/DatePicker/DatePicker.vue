@@ -41,6 +41,7 @@
       <li v-for="day in days" :key="`day-${day}`">
         <Day
           :day="day"
+          :highlighted="isToday(day)"
           :events="(collection.get({ day, month, year }) || [])"
           @click="onClick"
         />
@@ -70,6 +71,8 @@ export default class DatePicker extends Vue {
   @Prop({ default: {} })
   private collection!: CalendarEventCollection;
 
+  private today: Date = new Date();
+
   private date: Date = new Date();
 
   private next() {
@@ -94,6 +97,12 @@ export default class DatePicker extends Vue {
 
   private get days() {
     return new Date(this.year, this.month + 1, 0).getDate();
+  }
+
+  private isToday(day: number): boolean {
+    return this.today.getFullYear() === this.year
+      && this.today.getMonth() === this.month
+      && this.today.getDate() === day;
   }
 
   @Emit('input')
