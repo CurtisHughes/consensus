@@ -38,14 +38,13 @@
 
     <ul class="day-list">
       <li v-for="day in offset" :key="`prev-month-day-${day}`"></li>
-      <li v-for="day in days" :key="`day-${day}`">
-        <Day
-          :day="day"
-          :highlighted="isToday(day)"
-          :events="(collection.get({ day, month, year }) || [])"
-          @click="onClick"
-        />
-      </li>
+      <Day
+        v-for="day in days" :key="`day-${day}`"
+        :day="day"
+        :highlighted="isToday(day)"
+        :events="(collection.get({ day, month, year }) || [])"
+        @click="onClick"
+      />
     </ul>
   </div>
 </template>
@@ -151,7 +150,7 @@ header {
 ul {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-gap: 1px;
+  grid-gap: 4px;
   padding: 0;
   place-items: start;
 }
@@ -166,6 +165,7 @@ li {
   font-size: #{'min(4vw, 20px)'};
 
   li {
+    background: #E8E8E8;
     padding-bottom: 100%;
   }
 }

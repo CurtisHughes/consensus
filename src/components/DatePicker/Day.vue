@@ -1,9 +1,11 @@
 <template>
-  <div @click="$emit('click', day)" :class="[{ checked, highlighted }, 'day']">
-    <p>{{ day }}</p>
-    <!-- <DotGroup :count="events.length" :checked="checked" /> -->
-    <Dot :hidden="events.length === 0" :checked="checked" />
-  </div>
+  <li :class="[{ checked }, 'day-container']">
+    <div @click="$emit('click', day)" :class="[{ highlighted }, 'day']">
+      <p>{{ day }}</p>
+      <DotGroup :count="events.length" :checked="checked" />
+      <!-- <Dot :hidden="events.length === 0" :checked="checked" /> -->
+    </div>
+  </li>
 </template>
 
 <script lang="ts">
@@ -39,20 +41,19 @@ export default class Day extends Vue {
   position: absolute;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
+  padding: 15%;
+  width: 70%;
+  height: 70%;
   top: 0;
 
   p {
     margin: 0;
-    margin-bottom: #{'min(1vw, 5px)'};
+    flex-grow: 1;
   }
 }
 
-.day.checked {
-  background: #c4c4c44d;
+.day-container.checked {
+  background: #BCBCBC;
 }
 
 .day.highlighted {
