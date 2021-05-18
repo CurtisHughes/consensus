@@ -28,6 +28,15 @@ export default class DotGroup extends Vue {
 </script>
 
 <style scoped lang="scss">
+@keyframes grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 .dots {
   --dot-size: #{'min(2vw, 10px)'};
 
@@ -52,12 +61,14 @@ export default class DotGroup extends Vue {
   .dot.checked {
     &:last-child {
       background: var(--app-color, #CB89FF);
+      animation: grow .25s cubic-bezier(0, 0, 0, 2);
     }
   }
 
   .count {
     position: absolute;
     right: 0;
+    color: var(--primary-font-color, #2c3e50);
   }
 }
 

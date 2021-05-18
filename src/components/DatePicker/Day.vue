@@ -2,8 +2,7 @@
   <li :class="[{ checked }, 'day-container']">
     <div @click="$emit('click', day)" :class="[{ highlighted }, 'day']">
       <p>{{ day }}</p>
-      <DotGroup :count="events.length" :checked="checked" />
-      <!-- <Dot :hidden="events.length === 0" :checked="checked" /> -->
+      <DotGroup :count="events.length" :checked="checked" :limit="limit" />
     </div>
   </li>
 </template>
@@ -30,6 +29,12 @@ export default class Day extends Vue {
   @Prop({ default: [] })
   private events!: CalendarEvent[];
 
+  // eslint-disable-next-line class-methods-use-this
+  private get limit() {
+    // eslint-disable-next-line no-restricted-globals
+    return screen.width > 525 ? 4 : 3;
+  }
+
   private get checked() {
     return !!this.events.find(({ checked }) => checked);
   }
@@ -50,6 +55,10 @@ export default class Day extends Vue {
     margin: 0;
     flex-grow: 1;
   }
+}
+
+.day-container {
+  cursor: pointer;
 }
 
 .day-container.checked {
