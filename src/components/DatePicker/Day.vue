@@ -10,12 +10,10 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { CalendarEvent } from './models';
-import Dot from './Dot.vue';
 import DotGroup from './DotGroup.vue';
 
 @Component({
   components: {
-    Dot,
     DotGroup,
   },
 })
