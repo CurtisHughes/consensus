@@ -1,5 +1,11 @@
 <template>
-  <div class="spinner" :style="{ 'border-color': this.color, 'border-top-color': 'transparent' }" />
+  <div
+    class="spinner"
+    :style="{
+      'border-color': this.color,
+      'border-top-color': 'transparent',
+    }"
+  />
 </template>
 
 <script lang="ts">
