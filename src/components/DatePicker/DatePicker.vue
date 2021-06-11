@@ -38,13 +38,13 @@
 
     <ul class="day-list">
       <li v-for="day in offset" :key="`prev-month-day-${day}`"></li>
-      <li v-for="day in days" :key="`day-${day}`">
-        <Day
-          :day="day"
-          :events="(collection.get({ day, month, year }) || [])"
-          @click="onClick"
-        />
-      </li>
+      <Day
+        v-for="day in days" :key="`day-${day}`"
+        :day="day"
+        :highlighted="isToday(day)"
+        :events="(collection.get({ day, month, year }) || [])"
+        @click="onClick"
+      />
     </ul>
   </div>
 </template>
@@ -70,6 +70,8 @@ export default class DatePicker extends Vue {
   @Prop({ default: {} })
   private collection!: CalendarEventCollection;
 
+  private today: Date = new Date();
+
   private date: Date = new Date();
 
   private next() {
@@ -94,6 +96,12 @@ export default class DatePicker extends Vue {
 
   private get days() {
     return new Date(this.year, this.month + 1, 0).getDate();
+  }
+
+  private isToday(day: number): boolean {
+    return this.today.getFullYear() === this.year
+      && this.today.getMonth() === this.month
+      && this.today.getDate() === day;
   }
 
   @Emit('input')
@@ -142,7 +150,7 @@ header {
 ul {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-gap: 1px;
+  grid-gap: 4px;
   padding: 0;
   place-items: start;
 }
@@ -157,6 +165,7 @@ li {
   font-size: #{'min(4vw, 20px)'};
 
   li {
+    background: #E8E8E8;
     padding-bottom: 100%;
   }
 }

@@ -1,8 +1,10 @@
 <template>
-  <div @click="$emit('click', day)" :class="[{ checked }, 'day']">
-    <p>{{ day }}</p>
-    <DotGroup :count="events.length" />
-  </div>
+  <li :class="[{ checked }, 'day-container']">
+    <div @click="$emit('click', day)" :class="[{ highlighted }, 'day']">
+      <p>{{ day }}</p>
+      <DotGroup :count="events.length" :checked="checked" :limit="limit" />
+    </div>
+  </li>
 </template>
 
 <script lang="ts">
@@ -19,33 +21,49 @@ export default class Day extends Vue {
   @Prop({ type: Number, required: true })
   private day!: number;
 
+  @Prop({ type: Boolean, default: false })
+  private highlighted!: boolean;
+
   @Prop({ default: [] })
   private events!: CalendarEvent[];
 
+  // eslint-disable-next-line class-methods-use-this
+  private get limit() {
+    // eslint-disable-next-line no-restricted-globals
+    return screen.width > 525 ? 4 : 3;
+  }
+
   private get checked() {
-    return this.events.find(({ checked }) => checked);
+    return !!this.events.find(({ checked }) => checked);
   }
 }
 </script>
 
 <style scoped lang="scss">
-.checked {
-  background: #c4c4c44d;
-}
-
 .day {
   position: absolute;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
+  padding: 15%;
+  width: 70%;
+  height: 70%;
   top: 0;
 
   p {
     margin: 0;
-    margin-bottom: #{'min(1vw, 5px)'};
+    flex-grow: 1;
   }
+}
+
+.day-container {
+  cursor: pointer;
+}
+
+.day-container.checked {
+  background: #BCBCBC;
+}
+
+.day.highlighted {
+  color: var(--app-color, #CB89FF);
 }
 </style>
