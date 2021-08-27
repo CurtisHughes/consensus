@@ -77,34 +77,37 @@ export default class ResponseForm extends Vue {
   }
 
   private async toggleResponse(date: CalendarDate) {
-    try {
-      await this.$store.dispatch('setSyncing', true);
-      const existing = this.responses
-        .find(({ author, value: { day, month, year } }) => (
-          author === (auth.currentUser && auth.currentUser.uid)
-            && day === date.day
-            && month === date.month
-            && year === date.year
-        ));
-      if (existing) {
-        await database.collection('polls').doc(this.poll.id).collection('responses').doc(existing.id)
-          .delete();
-        analytics.logEvent('action', { name: 'delete_response', user: auth.currentUser?.uid });
-      } else {
-        const response: Response<DateValue> = {
-          author: auth.currentUser ? auth.currentUser.uid : '',
-          value: date,
-        };
-        await database.collection('polls').doc(this.poll.id).collection('responses').add(response);
-        analytics.logEvent('action', { name: 'create_response', user: auth.currentUser?.uid });
+    // eslint-disable-next-line no-async-promise-executor
+    this.$store.dispatch('setSyncing', new Promise<void>(async (resolve, reject) => {
+      try {
+        const existing = this.responses
+          .find(({ author, value: { day, month, year } }) => (
+            author === (auth.currentUser && auth.currentUser.uid)
+              && day === date.day
+              && month === date.month
+              && year === date.year
+          ));
+        if (existing) {
+          await database.collection('polls').doc(this.poll.id).collection('responses').doc(existing.id)
+            .delete();
+          analytics.logEvent('action', { name: 'delete_response', user: auth.currentUser?.uid });
+        } else {
+          const response: Response<DateValue> = {
+            author: auth.currentUser ? auth.currentUser.uid : '',
+            value: date,
+          };
+          await database.collection('polls').doc(this.poll.id).collection('responses').add(response);
+          analytics.logEvent('action', { name: 'create_response', user: auth.currentUser?.uid });
+        }
+      } catch (err) {
+        analytics.logEvent('error', { name: 'toggle_response', user: auth.currentUser?.uid, error: err });
+        reject();
+      } finally {
+        setTimeout(() => {
+          resolve();
+        }, 500);
       }
-    } catch (err) {
-      analytics.logEvent('error', { name: 'toggle_response', user: auth.currentUser?.uid, error: err });
-    } finally {
-      setTimeout(() => {
-        this.$store.dispatch('setSyncing', false);
-      }, 500);
-    }
+    }));
   }
 
   private get eventCollection() {
@@ -135,10 +138,10 @@ export default class ResponseForm extends Vue {
 </script>
 
 <style scoped lang="scss">
-
 main {
   max-width: 500px;
-  margin: 30px auto;
+  margin-left: auto;
+  margin-right: auto;
   padding: 0 30px;
 
   p {
@@ -160,5 +163,4 @@ main {
     }
   }
 }
-
 </style>

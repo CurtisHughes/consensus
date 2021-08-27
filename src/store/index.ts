@@ -4,21 +4,29 @@ import Vuex from 'vuex';
 Vue.use(Vuex);
 
 type State = {
-  syncing: boolean;
+  count: number;
 }
 
 export default new Vuex.Store<State>({
   state: {
-    syncing: false,
+    count: 0,
+  },
+  getters: {
+    syncing: (state: State) => state.count > 0,
   },
   mutations: {
-    setSyncing(state, syncing: boolean) {
-      state.syncing = syncing;
+    incrementCount(state) {
+      state.count += 1;
+    },
+    decrementCount(state) {
+      state.count -= 1;
     },
   },
   actions: {
     async setSyncing(context, syncing) {
-      context.commit('setSyncing', syncing);
+      context.commit('incrementCount');
+      await syncing;
+      context.commit('decrementCount');
     },
   },
 });

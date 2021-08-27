@@ -1,7 +1,7 @@
 <template>
   <header>
     <h3 @click="$router.push({ name: 'home' })">Consensus</h3>
-    <Spinner v-if="$store.state.syncing" class="spinner" />
+    <Spinner v-if="$store.getters.syncing" class="spinner" />
     <div v-else class="circle"></div>
   </header>
 </template>
@@ -30,12 +30,19 @@ export default class Header extends Vue {
 }
 
 header {
+  position: fixed;
+  height: 60px;
+  width: 100vw;
+  top: 0;
   display: grid;
+  background: white;
   grid-template-columns: 1fr auto;
   align-items: center;
   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, .15);
+  z-index: 100;
 
   h3 {
+    margin: auto;
     margin-left: 30px;
   }
 
