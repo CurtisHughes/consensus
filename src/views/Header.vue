@@ -1,8 +1,8 @@
 <template>
   <header>
     <h3 @click="$router.push({ name: 'home' })">Consensus</h3>
-    <Spinner v-if="loading" class="spinner" />
-    <div v-else @click="onClick" class="circle"></div>
+    <Spinner v-if="$store.state.syncing" class="spinner" />
+    <div v-else class="circle"></div>
   </header>
 </template>
 
@@ -16,14 +16,6 @@ import Spinner from '@/components/Spinner.vue';
   },
 })
 export default class Header extends Vue {
-  public loading = false;
-
-  public onClick() {
-    this.loading = true;
-    setTimeout(() => {
-      this.loading = false;
-    }, 1000);
-  }
 }
 </script>
 

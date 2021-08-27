@@ -78,6 +78,7 @@ export default class ResponseForm extends Vue {
 
   private async toggleResponse(date: CalendarDate) {
     try {
+      await this.$store.dispatch('setSyncing', true);
       const existing = this.responses
         .find(({ author, value: { day, month, year } }) => (
           author === (auth.currentUser && auth.currentUser.uid)
@@ -99,6 +100,10 @@ export default class ResponseForm extends Vue {
       }
     } catch (err) {
       analytics.logEvent('error', { name: 'toggle_response', user: auth.currentUser?.uid, error: err });
+    } finally {
+      setTimeout(() => {
+        this.$store.dispatch('setSyncing', false);
+      }, 500);
     }
   }
 
