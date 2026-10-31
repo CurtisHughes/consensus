@@ -66,6 +66,7 @@
   },
   "allowScripts": {
     "cypress": true,
+    "fsevents": false,
     "google-logging-utils": false,
     "protobufjs": false,
     "re2": false,
