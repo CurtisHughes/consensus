@@ -1,4 +1,4 @@
-export { default as Document } from './Document';
-export { default as Poll } from './Poll';
-export { default as Response } from './Response';
-export { default as DateValue } from './DateValue';
+export type { Document } from './Document';
+export type { Poll } from './Poll';
+export type { Response } from './Response';
+export type { DateValue } from './DateValue';

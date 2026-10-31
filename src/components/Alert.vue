@@ -7,9 +7,9 @@
 <style scoped lang="scss">
 .alert {
   position: relative;
-  padding: .75rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   border: 1px solid transparent;
-  border-radius: .25rem;
+  border-radius: 0.25rem;
   background: #f8d7da;
   color: #721c24;
 }

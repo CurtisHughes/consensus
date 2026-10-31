@@ -1,30 +1,25 @@
 <template>
   <div class="dots">
     <div class="count">
-      {{ (count > limit) ? `+${count - limit}` : null }}
+      {{ count > limit ? `+${count - limit}` : null }}
     </div>
-    <div
-      v-for="i in Math.min(count, limit)"
-      :key="i"
-      :class="[{ checked }, 'dot']"
-    />
+    <div v-for="i in Math.min(count, limit)" :key="i" :class="[{ checked }, 'dot']" />
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
-
-@Component
-export default class DotGroup extends Vue {
-  @Prop({ default: false, type: Boolean })
-  private checked!: boolean;
-
-  @Prop({ default: 0, type: Number })
-  private count!: number;
-
-  @Prop({ default: 4, type: Number })
-  private limit!: number;
-}
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    checked?: boolean;
+    count?: number;
+    limit?: number;
+  }>(),
+  {
+    checked: false,
+    count: 0,
+    limit: 4,
+  },
+);
 </script>
 
 <style scoped lang="scss">
@@ -53,15 +48,15 @@ export default class DotGroup extends Vue {
     width: var(--dot-size);
     height: var(--dot-size);
     margin: calc(-1 * var(--dot-size) / 4);
-    background: #BCBCBC;
+    background: #bcbcbc;
     border-radius: 50%;
-    border: .5px solid #00000052;
+    border: 0.5px solid #00000052;
   }
 
   .dot.checked {
     &:last-child {
-      background: var(--app-color, #CB89FF);
-      animation: grow .25s cubic-bezier(0, 0, 0, 2);
+      background: var(--app-color, #cb89ff);
+      animation: grow 0.25s cubic-bezier(0, 0, 0, 2);
     }
   }
 
@@ -71,5 +66,4 @@ export default class DotGroup extends Vue {
     color: var(--primary-font-color, #2c3e50);
   }
 }
-
 </style>

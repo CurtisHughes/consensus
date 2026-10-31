@@ -4,27 +4,24 @@
   </main>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { signInAnonymously } from 'firebase/auth';
 import Spinner from '@/components/Spinner.vue';
 import auth, { initialized } from '@/gateways/authentication';
 
-@Component({
-  components: {
-    Spinner,
-  },
-})
-export default class Login extends Vue {
-  public async mounted() {
-    if ((await initialized) && !auth.currentUser) {
-      await auth.signInAnonymously();
-    }
+const route = useRoute();
+const router = useRouter();
 
-    return this.$route.params.nextUrl !== null
-      ? this.$router.replace(this.$route.params.nextUrl)
-      : this.$router.replace('/');
+onMounted(async () => {
+  if ((await initialized) && !auth.currentUser) {
+    await signInAnonymously(auth);
   }
-}
+
+  const { nextUrl } = route.query;
+  await router.replace(typeof nextUrl === 'string' && nextUrl.startsWith('/') ? nextUrl : '/');
+});
 </script>
 
 <style scoped lang="scss">

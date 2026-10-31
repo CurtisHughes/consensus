@@ -1,7 +1,5 @@
-type Poll = {
-    name: string;
-    description: string;
-    author: string;
-}
-
-export default Poll;
+export type Poll = {
+  name: string;
+  description: string;
+  author: string;
+};

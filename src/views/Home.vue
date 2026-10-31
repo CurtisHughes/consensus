@@ -3,30 +3,19 @@
     <div>
       <h1>Consensus</h1>
       <p>create, vote, share. no logins required</p>
-      <Button :inverted="true" @click="handleClick">CREATE POLL</Button>
+      <Button inverted @click="handleClick">CREATE POLL</Button>
     </div>
   </main>
 </template>
 
-<script lang="ts">
-import VueRouter from 'vue-router';
-import { Component, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
 import Button from '@/components/Button.vue';
 
-@Component({
-  components: {
-    Button,
-  },
-})
-export default class Home extends Vue {
-  private handleClick() {
-    this.$router.push({ name: 'polls' })
-      .catch((failure) => {
-        if (!VueRouter.isNavigationFailure(failure, VueRouter.NavigationFailureType.redirected)) {
-          throw failure;
-        }
-      });
-  }
+const router = useRouter();
+
+function handleClick() {
+  void router.push({ name: 'polls' });
 }
 </script>
 
@@ -37,7 +26,7 @@ main {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: var(--app-color, #CB89FF);
+  background: var(--app-color, #cb89ff);
   color: white;
   clip-path: polygon(0 0, 100% 0, 100% 50%, 0 90%);
 

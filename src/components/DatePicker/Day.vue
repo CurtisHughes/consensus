@@ -1,42 +1,36 @@
 <template>
   <li :class="[{ checked }, 'day-container']">
-    <div @click="$emit('click', day)" :class="[{ highlighted }, 'day']">
+    <div :class="[{ highlighted }, 'day']" @click="emit('select', day)">
       <p>{{ day }}</p>
       <DotGroup :count="events.length" :checked="checked" :limit="limit" />
     </div>
   </li>
 </template>
 
-<script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { CalendarEvent } from './models';
+<script setup lang="ts">
+import { computed } from 'vue';
+import type { CalendarEvent } from './models';
 import DotGroup from './DotGroup.vue';
 
-@Component({
-  components: {
-    DotGroup,
+const props = withDefaults(
+  defineProps<{
+    day: number;
+    highlighted?: boolean;
+    events?: CalendarEvent[];
+  }>(),
+  {
+    highlighted: false,
+    events: () => [],
   },
-})
-export default class Day extends Vue {
-  @Prop({ type: Number, required: true })
-  private day!: number;
+);
 
-  @Prop({ type: Boolean, default: false })
-  private highlighted!: boolean;
+const emit = defineEmits<{
+  select: [day: number];
+}>();
 
-  @Prop({ default: [] })
-  private events!: CalendarEvent[];
+const limit = window.screen.width > 525 ? 4 : 3;
 
-  // eslint-disable-next-line class-methods-use-this
-  private get limit() {
-    // eslint-disable-next-line no-restricted-globals
-    return screen.width > 525 ? 4 : 3;
-  }
-
-  private get checked() {
-    return !!this.events.find(({ checked }) => checked);
-  }
-}
+const checked = computed(() => props.events.some((event) => event.checked));
 </script>
 
 <style scoped lang="scss">
@@ -60,10 +54,10 @@ export default class Day extends Vue {
 }
 
 .day-container.checked {
-  background: #BCBCBC;
+  background: #bcbcbc;
 }
 
 .day.highlighted {
-  color: var(--app-color, #CB89FF);
+  color: var(--app-color, #cb89ff);
 }
 </style>

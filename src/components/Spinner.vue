@@ -2,19 +2,21 @@
   <div
     class="spinner"
     :style="{
-      'border-color': this.color,
+      'border-color': color,
       'border-top-color': 'transparent',
     }"
   />
 </template>
 
-<script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-
-@Component
-export default class Spinner extends Vue {
-  @Prop({ default: 'var(--app-color, #CB89FF)' }) private color!: string;
-}
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    color?: string;
+  }>(),
+  {
+    color: 'var(--app-color, #CB89FF)',
+  },
+);
 </script>
 
 <style scoped lang="scss">

@@ -2,7 +2,7 @@
   <main>
     <h1>{{ poll.name }}</h1>
     <p>{{ poll.description }}</p>
-    <DatePicker :collection="eventCollection" @input="toggleResponse" />
+    <DatePicker :collection="eventCollection" @select="toggleResponse" />
     <h2>Suggested Dates:</h2>
     <ul class="suggestions">
       <li v-for="{ date, count } in suggestions" :key="date.toLocaleDateString()">
@@ -14,127 +14,111 @@
   </main>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  type DocumentSnapshot,
+  type QuerySnapshot,
+  type Unsubscribe,
+} from 'firebase/firestore';
 import DatePicker from '@/components/DatePicker/DatePicker.vue';
-import { CalendarEventCollection, CalendarDate } from '@/components/DatePicker/models';
+import { CalendarEventCollection, type CalendarDate } from '@/components/DatePicker/models';
 import ShareTextButton from '@/components/ShareTextButton.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
-import analytics from '@/gateways/analytics';
-import {
-  Poll, Response, Document, DateValue,
-} from '@/models';
+import { logEvent } from '@/gateways/analytics';
+import { useSyncStore } from '@/stores/sync';
+import type { Poll, Response, Document, DateValue } from '@/models';
 
-@Component({
-  components: {
-    ShareTextButton,
-    DatePicker,
-  },
-})
-export default class ResponseForm extends Vue {
-  private poll: Document<Poll> = {} as Document<Poll>;
+const route = useRoute();
+const sync = useSyncStore();
+const pollId = route.params.id as string;
 
-  private responses: Document<Response<DateValue>>[] = [];
+const poll = ref({} as Document<Poll>);
+const responses = ref<Document<Response<DateValue>>[]>([]);
+const shareLinkText = window.location.href;
 
-  private unsubscribeFromPoll!: () => void;
+let unsubscribeFromPoll: Unsubscribe | undefined;
+let unsubscribeFromResponses: Unsubscribe | undefined;
 
-  private unsubscribeFromResponses!: () => void;
+function handlePollSnapshot(document: DocumentSnapshot) {
+  poll.value = {
+    id: document.id,
+    ...(document.data() as Poll),
+  };
+}
 
-  private shareLinkText = window.location.href;
+function handleResponsesSnapshot(snapshot: QuerySnapshot) {
+  responses.value = snapshot.docs.map((response) => ({
+    id: response.id,
+    ...(response.data() as Response<DateValue>),
+  }));
+}
 
-  public async mounted() {
-    const { id } = this.$route.params;
-    this.unsubscribeFromResponses = database.collection('polls').doc(id).collection('responses').onSnapshot(this.handleResponsesSnapshot);
-    this.unsubscribeFromPoll = database.collection('polls').doc(id).onSnapshot(this.handlePollSnapshot);
-  }
+onMounted(() => {
+  const pollRef = doc(database, 'polls', pollId);
+  unsubscribeFromResponses = onSnapshot(collection(pollRef, 'responses'), handleResponsesSnapshot);
+  unsubscribeFromPoll = onSnapshot(pollRef, handlePollSnapshot);
+});
 
-  public beforeDestroy() {
-    this.unsubscribeFromPoll();
-    this.unsubscribeFromResponses();
-  }
+onBeforeUnmount(() => {
+  unsubscribeFromPoll?.();
+  unsubscribeFromResponses?.();
+});
 
-  private handlePollSnapshot(
-    document: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>,
-  ) {
-    this.poll = {
-      id: document.id,
-      ...document.data() as Poll,
-    };
-  }
-
-  private handleResponsesSnapshot(
-    snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>,
-  ) {
-    const responses: Document<Response<DateValue>>[] = [];
-    snapshot.forEach((doc) => {
-      responses.push({
-        id: doc.id,
-        ...doc.data() as Response<DateValue>,
-      });
-    });
-    this.responses = responses;
-  }
-
-  private async toggleResponse(date: CalendarDate) {
-    // eslint-disable-next-line no-async-promise-executor
-    this.$store.dispatch('setSyncing', new Promise<void>(async (resolve, reject) => {
-      try {
-        const existing = this.responses
-          .find(({ author, value: { day, month, year } }) => (
-            author === (auth.currentUser && auth.currentUser.uid)
-              && day === date.day
-              && month === date.month
-              && year === date.year
-          ));
-        if (existing) {
-          await database.collection('polls').doc(this.poll.id).collection('responses').doc(existing.id)
-            .delete();
-          analytics.logEvent('action', { name: 'delete_response', user: auth.currentUser?.uid });
-        } else {
-          const response: Response<DateValue> = {
-            author: auth.currentUser ? auth.currentUser.uid : '',
-            value: date,
-          };
-          await database.collection('polls').doc(this.poll.id).collection('responses').add(response);
-          analytics.logEvent('action', { name: 'create_response', user: auth.currentUser?.uid });
-        }
-      } catch (err) {
-        analytics.logEvent('error', { name: 'toggle_response', user: auth.currentUser?.uid, error: err });
-        reject();
-      } finally {
-        setTimeout(() => {
-          resolve();
-        }, 500);
-      }
-    }));
-  }
-
-  private get eventCollection() {
-    return this.responses.reduce(
-      (acc, { author, value }) => acc.add(value, {
-        checked: (auth.currentUser && auth.currentUser.uid) === author,
-      }), new CalendarEventCollection(),
-    );
-  }
-
-  private get authors() {
-    return this.responses.reduce((acc, { author }) => acc.add(author), new Set());
-  }
-
-  private get suggestions() {
-    const suggestions = [];
-
-    // eslint-disable-next-line no-restricted-syntax
-    for (const { events, date: { year, month, day } } of this.eventCollection) {
-      suggestions.push({ date: new Date(year, month, day), count: events.length });
+async function saveResponse(date: CalendarDate) {
+  const uid = auth.currentUser?.uid;
+  const responsesRef = collection(database, 'polls', pollId, 'responses');
+  const existing = responses.value.find(
+    ({ author, value: { day, month, year } }) =>
+      author === uid && day === date.day && month === date.month && year === date.year,
+  );
+  try {
+    if (existing) {
+      await deleteDoc(doc(responsesRef, existing.id));
+      logEvent('action', { name: 'delete_response', user: uid });
+    } else {
+      const response: Response<DateValue> = {
+        author: uid ?? '',
+        value: date,
+      };
+      await addDoc(responsesRef, response);
+      logEvent('action', { name: 'create_response', user: uid });
     }
-
-    return suggestions
-      .sort((a, b) => (b.count - a.count) || (a.date.getTime() - b.date.getTime()))
-      .slice(0, 3);
+  } catch (err) {
+    logEvent('error', { name: 'toggle_response', user: uid, error: err });
+  } finally {
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 }
+
+function toggleResponse(date: CalendarDate) {
+  void sync.track(saveResponse(date));
+}
+
+const eventCollection = computed(() =>
+  responses.value.reduce(
+    (acc, { author, value }) => acc.add(value, { checked: auth.currentUser?.uid === author }),
+    new CalendarEventCollection(),
+  ),
+);
+
+const authors = computed(() => new Set(responses.value.map(({ author }) => author)));
+
+const suggestions = computed(() =>
+  Array.from(eventCollection.value, ({ events, date: { year, month, day } }) => ({
+    date: new Date(year, month, day),
+    count: events.length,
+  }))
+    .sort((a, b) => b.count - a.count || a.date.getTime() - b.date.getTime())
+    .slice(0, 3),
+);
 </script>
 
 <style scoped lang="scss">
