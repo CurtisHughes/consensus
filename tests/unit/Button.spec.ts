@@ -1,12 +1,37 @@
-import { shallowMount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
 import Button from '@/components/Button.vue';
 
 describe('Button.vue', () => {
-  it('renders a button', () => {
-    const color = 'blue';
-    const wrapper = shallowMount(Button, {
-      propsData: { color },
+  it('renders slot content with the given color', () => {
+    const wrapper = mount(Button, {
+      props: { color: 'blue' },
+      slots: { default: 'CREATE' },
     });
-    expect(wrapper.get('button'));
+    expect(wrapper.text()).toBe('CREATE');
+    expect(wrapper.get('button').attributes('style')).toContain('background: blue');
+  });
+
+  it('has no background when inverted', () => {
+    const wrapper = mount(Button, { props: { inverted: true } });
+    expect(wrapper.get('button').attributes('style')).toContain('background: none');
+  });
+
+  it('emits a single click event when clicked', async () => {
+    let clicks = 0;
+    const wrapper = mount(Button, { attrs: { onClick: () => (clicks += 1) } });
+    await wrapper.get('button').trigger('click');
+    expect(clicks).toBe(1);
+  });
+
+  it('does not fire click handlers when disabled', async () => {
+    let clicks = 0;
+    const wrapper = mount(Button, {
+      props: { disabled: true },
+      attrs: { onClick: () => (clicks += 1) },
+    });
+    expect(wrapper.get('button').element.disabled).toBe(true);
+    await wrapper.get('button').trigger('click');
+    expect(clicks).toBe(0);
   });
 });
