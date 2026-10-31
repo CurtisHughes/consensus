@@ -1,10 +1,10 @@
-import firebase from '@/clients/firebase';
-import 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import client from '@/clients/firebase';
 
-const auth = firebase.auth();
+const auth = getAuth(client);
 
 export const initialized: Promise<boolean> = new Promise((resolve) => {
-  const unsubscribe = auth.onAuthStateChanged(() => {
+  const unsubscribe = onAuthStateChanged(auth, () => {
     unsubscribe();
     resolve(true);
   });

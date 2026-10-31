@@ -1,4 +1,4 @@
-import firebase from '@/clients/firebase';
-import 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import client from '@/clients/firebase';
 
-export default firebase.firestore();
+export default getFirestore(client);
