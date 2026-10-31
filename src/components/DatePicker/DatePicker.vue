@@ -2,11 +2,11 @@
   <div class="date-picker">
     <header>
       <button aria-label="Previous month" @click="prev">
-        <Arrow inverse />
+        <DatePickerArrow inverse />
       </button>
       <h1>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h1>
       <button aria-label="Next month" @click="next">
-        <Arrow />
+        <DatePickerArrow />
       </button>
     </header>
 
@@ -36,7 +36,7 @@
 
     <ul class="day-list">
       <li v-for="day in offset" :key="`prev-month-day-${day}`"></li>
-      <Day
+      <DatePickerDay
         v-for="day in days"
         :key="`day-${day}`"
         :day="day"
@@ -50,8 +50,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import Day from './Day.vue';
-import Arrow from './Arrow.vue';
+import DatePickerDay from './DatePickerDay.vue';
+import DatePickerArrow from './DatePickerArrow.vue';
 import { CalendarEventCollection, type CalendarDate } from './models';
 
 withDefaults(

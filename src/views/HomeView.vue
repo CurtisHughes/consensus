@@ -3,14 +3,14 @@
     <div>
       <h1>Consensus</h1>
       <p>create, vote, share. no logins required</p>
-      <Button inverted @click="handleClick">CREATE POLL</Button>
+      <BaseButton inverted @click="handleClick">CREATE POLL</BaseButton>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import Button from '@/components/Button.vue';
+import BaseButton from '@/components/BaseButton.vue';
 
 const router = useRouter();
 

@@ -1,14 +1,14 @@
 <template>
   <header>
     <h3 @click="router.push({ name: 'home' })">Consensus</h3>
-    <Spinner v-if="sync.syncing" class="spinner" />
+    <BaseSpinner v-if="sync.syncing" class="spinner" />
     <div v-else class="circle"></div>
   </header>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import Spinner from '@/components/Spinner.vue';
+import BaseSpinner from '@/components/BaseSpinner.vue';
 import { useSyncStore } from '@/stores/sync';
 
 const router = useRouter();

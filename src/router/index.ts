@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
-import Home from '@/views/Home.vue';
+import HomeView from '@/views/HomeView.vue';
 import auth from '@/gateways/authentication';
 import { logEvent } from '@/gateways/analytics';
 
@@ -7,18 +7,18 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: Home,
+    component: HomeView,
   },
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/Login.vue'),
+    component: () => import('@/views/LoginView.vue'),
   },
   {
     path: '/polls',
     name: 'polls',
     components: {
-      header: () => import('@/views/Header.vue'),
+      header: () => import('@/views/AppHeader.vue'),
       default: () => import('@/views/PollForm.vue'),
     },
     meta: {
@@ -29,7 +29,7 @@ const routes: RouteRecordRaw[] = [
     path: '/polls/:id',
     name: 'polls-id',
     components: {
-      header: () => import('@/views/Header.vue'),
+      header: () => import('@/views/AppHeader.vue'),
       default: () => import('@/views/ResponseForm.vue'),
     },
     meta: {

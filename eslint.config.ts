@@ -14,14 +14,6 @@ export default defineConfigWithVueTs(
 
   pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommended,
-
-  {
-    name: 'app/rules',
-    rules: {
-      'vue/multi-word-component-names': 'off',
-    },
-  },
-
   {
     ...pluginCypress.configs.recommended,
     files: ['cypress/**/*.{js,ts}'],

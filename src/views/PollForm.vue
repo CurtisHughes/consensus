@@ -1,6 +1,6 @@
 <template>
   <main>
-    <Alert v-if="error" class="alert">Whoops! Something went wrong.</Alert>
+    <BaseAlert v-if="error" class="alert">Whoops! Something went wrong.</BaseAlert>
     <form :style="{ opacity: loading ? '65%' : '100%' }" @submit.prevent="handleSubmit">
       <label for="event">Event Name:</label>
       <TextInput
@@ -13,7 +13,7 @@
       />
 
       <label for="description">Description:</label>
-      <Textarea
+      <TextArea
         id="description"
         v-model="description"
         required
@@ -24,10 +24,10 @@
         placeholder="Let's go to outside!"
       />
 
-      <Button type="submit" :disabled="loading"> CREATE </Button>
+      <BaseButton type="submit" :disabled="loading"> CREATE </BaseButton>
     </form>
     <span v-if="loading" class="overlay">
-      <Spinner />
+      <BaseSpinner />
     </span>
   </main>
 </template>
@@ -36,11 +36,11 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { addDoc, collection } from 'firebase/firestore';
-import Button from '@/components/Button.vue';
+import BaseButton from '@/components/BaseButton.vue';
 import TextInput from '@/components/TextInput.vue';
-import Textarea from '@/components/Textarea.vue';
-import Spinner from '@/components/Spinner.vue';
-import Alert from '@/components/Alert.vue';
+import TextArea from '@/components/TextArea.vue';
+import BaseSpinner from '@/components/BaseSpinner.vue';
+import BaseAlert from '@/components/BaseAlert.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
 import { logEvent } from '@/gateways/analytics';

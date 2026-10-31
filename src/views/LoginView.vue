@@ -1,6 +1,6 @@
 <template>
   <main>
-    <Spinner />
+    <BaseSpinner />
   </main>
 </template>
 
@@ -8,7 +8,7 @@
 import { onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { signInAnonymously } from 'firebase/auth';
-import Spinner from '@/components/Spinner.vue';
+import BaseSpinner from '@/components/BaseSpinner.vue';
 import auth, { initialized } from '@/gateways/authentication';
 
 const route = useRoute();
