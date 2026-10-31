@@ -20,8 +20,21 @@ onMounted(async () => {
   }
 
   const { nextUrl } = route.query;
-  await router.replace(typeof nextUrl === 'string' && nextUrl.startsWith('/') ? nextUrl : '/');
+  await router.replace(getSafeRedirect(nextUrl));
 });
+
+function getSafeRedirect(value: unknown): string {
+  if (typeof value !== 'string' || !value.startsWith('/')) return '/';
+  // Reject protocol-relative URLs, backslashes, and control characters.
+  if (value.startsWith('//') || /[\\\u0000-\u001f\u007f]/.test(value)) return '/';
+  try {
+    const resolved = new URL(value, window.location.origin);
+    if (resolved.origin !== window.location.origin) return '/';
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch {
+    return '/';
+  }
+}
 </script>
 
 <style scoped lang="scss">
