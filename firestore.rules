@@ -1,15 +1,41 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /polls/{poll} {
-      allow get: if request.auth.uid != null;
-      allow write: if request.auth.uid != null && request.resource.data.author == request.auth.uid;
-      allow list: if false;
+    function isSignedIn() {
+      return request.auth != null;
     }
+
+    function isValidPoll(data) {
+      return data.keys().hasOnly(['name', 'description', 'author'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.description is string && data.description.size() <= 2000
+        && data.author == request.auth.uid;
+    }
+
+    function isValidResponse(data) {
+      return data.keys().hasOnly(['author', 'value'])
+        && data.author == request.auth.uid
+        && data.value is map
+        && data.value.keys().hasOnly(['year', 'month', 'day'])
+        && data.value.year is int && data.value.year >= 2000 && data.value.year <= 2200
+        && data.value.month is int && data.value.month >= 0 && data.value.month <= 12
+        && data.value.day is int && data.value.day >= 1 && data.value.day <= 31;
+    }
+
+    // Polls can be read by id but never listed, and are immutable once created.
+    match /polls/{poll} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn() && isValidPoll(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Responses can be created by their author, and deleted by their author. They are never edited.
     match /polls/{poll}/responses/{response} {
-      allow get, list: if request.auth.uid != null;
-    	allow write: if request.auth.uid != null && request.resource.data.author == request.auth.uid;
-      allow delete: if request.auth.uid != null && resource.data.author == request.auth.uid;
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidResponse(request.resource.data);
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.author == request.auth.uid;
     }
   }
 }
