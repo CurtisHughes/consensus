@@ -29,7 +29,7 @@ npx firebase login
 ```
 
 For continuous integration, use a service account instead (`firebase login:ci` tokens are deprecated):
-1. In the [Google Cloud console](https://console.cloud.google.com/iam-admin/serviceaccounts) for your project, create a service account with the **Firebase Hosting Admin**, **Firebase Rules Admin**, **Cloud Datastore Index Admin**, and **API Keys Viewer** roles. Running `npx firebase init hosting:github` will also create one for you, with the Hosting roles only.
+1. In the [Google Cloud console](https://console.cloud.google.com/iam-admin/serviceaccounts) for your project, create a service account with the **Firebase Hosting Admin**, **Firebase Rules Admin**, **Cloud Datastore Index Admin**, **API Keys Viewer**, and **Service Usage Consumer** roles. The CLI uses the last one to check that the Firebase APIs are enabled before deploying. Running `npx firebase init hosting:github` will also create one for you, with the Hosting roles only.
 2. Create a JSON key for the service account.
 3. Add the full JSON contents as a repository secret named `FIREBASE_SERVICE_ACCOUNT` (**Settings > Secrets and variables > Actions**).
 4. Replace `consensus-fcf99` with your project ID in [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) and [.github/workflows/preview.yml](../.github/workflows/preview.yml).
