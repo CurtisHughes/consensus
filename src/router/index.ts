@@ -37,6 +37,14 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    components: {
+      header: () => import('@/views/AppHeader.vue'),
+      default: () => import('@/views/NotFoundView.vue'),
+    },
+  },
 ];
 
 const router = createRouter({

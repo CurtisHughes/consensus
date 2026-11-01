@@ -4,7 +4,7 @@
       <button aria-label="Previous month" @click="prev">
         <DatePickerArrow inverse />
       </button>
-      <h1>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h1>
+      <h2>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h2>
       <button aria-label="Next month" @click="next">
         <DatePickerArrow />
       </button>
@@ -128,7 +128,7 @@ header {
   align-items: center;
   margin: 0;
 
-  h1 {
+  h2 {
     font-size: #{'min(5vw, 22.5px)'};
   }
 
