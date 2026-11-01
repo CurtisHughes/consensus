@@ -1,17 +1,17 @@
 <template>
   <header>
-    <h3 @click="router.push({ name: 'home' })">Consensus</h3>
+    <h3>
+      <router-link :to="{ name: 'home' }">Consensus</router-link>
+    </h3>
     <BaseSpinner v-if="sync.syncing" class="spinner" />
     <div v-else class="circle"></div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
 import BaseSpinner from '@/components/BaseSpinner.vue';
 import { useSyncStore } from '@/stores/sync';
 
-const router = useRouter();
 const sync = useSyncStore();
 </script>
 
@@ -40,6 +40,11 @@ header {
   h3 {
     margin: auto;
     margin-left: 30px;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
   }
 
   .spinner {

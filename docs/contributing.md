@@ -33,12 +33,21 @@ npm run build:dev
 npm run test:unit
 ```
 
+### Run Firestore security rules tests
+```
+npm run test:rules
+```
+
+This starts the Firestore emulator (which requires Java) and runs the specs in `tests/rules` against [firestore.rules](../firestore.rules).
+
 ### Run end-to-end tests ([Cypress](https://www.cypress.io/))
 ```
 npm run test:e2e
 ```
 
 This builds the app, serves it with `vite preview`, and runs the specs in `cypress/e2e` headlessly. Use `npm run test:e2e:open` to run them interactively against the dev server instead.
+
+If you open the emulator-backed app in your own browser, note that the emulators start empty on every run but the browser keeps its anonymous login. That stale login can't get a token from the fresh emulator, so writes queue forever and "CREATE" spins without an error. Clear the site's data for `localhost:4173` (or use a private window) after restarting the emulators.
 
 ### Lint and format
 ```

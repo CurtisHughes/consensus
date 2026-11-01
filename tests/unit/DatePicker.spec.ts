@@ -21,8 +21,28 @@ describe('DatePicker.vue', () => {
 
   it('emits the selected date', async () => {
     const wrapper = mount(DatePicker);
-    await wrapper.findAll('.day')[4]!.trigger('click');
-    expect(wrapper.emitted('select')).toEqual([[{ year: 2026, month: 9, day: 5 }]]);
+    await wrapper.findAll('.day')[19]!.trigger('click');
+    expect(wrapper.emitted('select')).toEqual([[{ year: 2026, month: 9, day: 20 }]]);
+  });
+
+  it('disables days before today', async () => {
+    const wrapper = mount(DatePicker);
+    const days = wrapper.findAll('.day');
+    expect(days[13]!.attributes('disabled')).toBeDefined();
+    expect(days[14]!.attributes('disabled')).toBeUndefined();
+    await days[4]!.trigger('click');
+    expect(wrapper.emitted('select')).toBeUndefined();
+  });
+
+  it('labels each day with its date, vote count, and pressed state', () => {
+    const collection = new CalendarEventCollection()
+      .add({ year: 2026, month: 9, day: 20 }, { checked: true })
+      .add({ year: 2026, month: 9, day: 20 }, {});
+    const wrapper = mount(DatePicker, { props: { collection } });
+    const day = wrapper.findAll('.day')[19]!;
+    expect(day.attributes('aria-label')).toBe('October 20, 2026, 2 votes');
+    expect(day.attributes('aria-pressed')).toBe('true');
+    expect(wrapper.findAll('.day')[20]!.attributes('aria-pressed')).toBe('false');
   });
 
   it('navigates between months', async () => {

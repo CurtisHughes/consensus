@@ -1,6 +1,12 @@
 {
   "extends": "@tsconfig/node26/tsconfig.json",
-  "include": ["vite.config.*", "cypress.config.*", "eslint.config.*"],
+  "include": [
+    "vite.config.*",
+    "vitest.rules.config.*",
+    "cypress.config.*",
+    "eslint.config.*",
+    "tests/rules/**/*"
+  ],
   "compilerOptions": {
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",

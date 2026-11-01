@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { onAuthStateChanged } from 'firebase/auth';
 import HomeView from '@/views/HomeView.vue';
-import auth from '@/gateways/authentication';
+import auth, { initialized } from '@/gateways/authentication';
 import { logEvent } from '@/gateways/analytics';
 
 const routes: RouteRecordRaw[] = [
@@ -43,13 +44,30 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  // currentUser is null until Firebase restores a persisted session.
+  await initialized;
   if (to.meta.requiresAuth && !auth.currentUser) {
     logEvent('view', { name: 'login' });
     return { name: 'login', query: { nextUrl: to.fullPath } };
   }
-  logEvent('view', { name: to.name, user: auth.currentUser?.uid });
+  logEvent('view', { name: String(to.name) });
   return true;
+});
+
+// Firebase signs the user out if their account is deleted or disabled mid-session. Send them
+// through login again so they get a fresh anonymous account instead of failing every write.
+void initialized.then(() => {
+  let signedIn = auth.currentUser !== null;
+  onAuthStateChanged(auth, (user) => {
+    const lostSession = signedIn && !user;
+    signedIn = user !== null;
+    const route = router.currentRoute.value;
+    if (lostSession && route.meta.requiresAuth) {
+      logEvent('action', { name: 'session_lost' });
+      void router.replace({ name: 'login', query: { nextUrl: route.fullPath } });
+    }
+  });
 });
 
 // Deploys delete the previous build's chunks, so a tab opened before a deploy can fail to load a

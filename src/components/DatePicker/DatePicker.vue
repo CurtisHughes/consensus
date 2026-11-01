@@ -40,7 +40,10 @@
         v-for="day in days"
         :key="`day-${day}`"
         :day="day"
+        :label="dayLabel(day)"
         :highlighted="isToday(day)"
+        :disabled="isPast(day)"
+        :limit="dotLimit"
         :events="collection.get({ day, month, year }) || []"
         @select="onSelect"
       />
@@ -53,6 +56,7 @@ import { computed, ref } from 'vue';
 import DatePickerDay from './DatePickerDay.vue';
 import DatePickerArrow from './DatePickerArrow.vue';
 import { CalendarEventCollection, type CalendarDate } from './models';
+import { useMediaQuery } from '@/composables/useMediaQuery';
 
 withDefaults(
   defineProps<{
@@ -75,6 +79,9 @@ const month = computed(() => date.value.getMonth());
 const offset = computed(() => new Date(year.value, month.value).getDay());
 const days = computed(() => new Date(year.value, month.value + 1, 0).getDate());
 
+const wide = useMediaQuery('(min-width: 526px)');
+const dotLimit = computed(() => (wide.value ? 4 : 3));
+
 function next() {
   date.value = new Date(year.value, month.value + 1);
 }
@@ -89,6 +96,19 @@ function isToday(day: number): boolean {
     today.getMonth() === month.value &&
     today.getDate() === day
   );
+}
+
+function isPast(day: number): boolean {
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return new Date(year.value, month.value, day) < startOfToday;
+}
+
+function dayLabel(day: number): string {
+  return new Date(year.value, month.value, day).toLocaleDateString('default', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function onSelect(day: number) {

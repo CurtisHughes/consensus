@@ -1,6 +1,9 @@
 <template>
   <main>
-    <BaseAlert v-if="error" class="alert">Whoops! Something went wrong.</BaseAlert>
+    <BaseAlert v-if="error" class="alert" role="alert">Whoops! Something went wrong.</BaseAlert>
+    <BaseAlert v-else-if="sync.slow" class="alert" role="status">
+      Still saving. Check your internet connection.
+    </BaseAlert>
     <form :style="{ opacity: loading ? '65%' : '100%' }" @submit.prevent="handleSubmit">
       <label for="event">Event Name:</label>
       <TextInput
@@ -8,8 +11,9 @@
         v-model="name"
         :disabled="loading"
         required
+        maxlength="200"
         name="event"
-        placeholder="Camping 2020"
+        placeholder="Camping trip"
       />
 
       <label for="description">Description:</label>
@@ -17,11 +21,12 @@
         id="description"
         v-model="description"
         required
+        maxlength="2000"
         :disabled="loading"
         name="description"
         cols="30"
         rows="5"
-        placeholder="Let's go to outside!"
+        placeholder="Let's go outside!"
       />
 
       <BaseButton type="submit" :disabled="loading"> CREATE </BaseButton>
@@ -43,10 +48,12 @@ import BaseSpinner from '@/components/BaseSpinner.vue';
 import BaseAlert from '@/components/BaseAlert.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
-import { logEvent } from '@/gateways/analytics';
+import { logError, logEvent } from '@/gateways/analytics';
+import { useSyncStore } from '@/stores/sync';
 import type { Poll } from '@/models';
 
 const router = useRouter();
+const sync = useSyncStore();
 
 const name = ref('');
 const description = ref('');
@@ -56,13 +63,14 @@ const loading = ref(false);
 async function handleSubmit() {
   try {
     loading.value = true;
+    error.value = false;
     const poll: Poll = {
       name: name.value,
       description: description.value,
       author: auth.currentUser ? auth.currentUser.uid : '',
     };
-    const { id } = await addDoc(collection(database, 'polls'), poll);
-    logEvent('action', { name: 'create_poll', user: auth.currentUser?.uid });
+    const { id } = await sync.track(addDoc(collection(database, 'polls'), poll));
+    logEvent('action', { name: 'create_poll' });
     await router.push({
       name: 'polls-id',
       params: { id },
@@ -70,7 +78,7 @@ async function handleSubmit() {
   } catch (err) {
     loading.value = false;
     error.value = true;
-    logEvent('error', { name: 'create_poll', user: auth.currentUser?.uid, error: err });
+    logError('create_poll', err);
   }
 }
 </script>

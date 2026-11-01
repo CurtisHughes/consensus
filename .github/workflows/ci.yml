@@ -41,6 +41,7 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npm ci
+      - run: npm run test:rules
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v5
         if: failure()
