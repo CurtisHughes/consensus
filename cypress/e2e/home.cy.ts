@@ -6,3 +6,12 @@ describe('Home page', () => {
     cy.contains('button', 'CREATE POLL').should('be.visible');
   });
 });
+
+describe('Unknown pages', () => {
+  it('shows a not found page that links back home', () => {
+    cy.visit('/does/not/exist');
+    cy.contains('h1', 'Page not found');
+    cy.contains('a', 'Back to home').click();
+    cy.location('pathname').should('eq', '/');
+  });
+});

@@ -63,7 +63,7 @@ describe('Responding to a poll', () => {
   });
 
   it('navigates between months', () => {
-    const heading = () => cy.get('.date-picker header h1');
+    const heading = () => cy.get('.date-picker header h2');
     heading()
       .invoke('text')
       .then((initial) => {
