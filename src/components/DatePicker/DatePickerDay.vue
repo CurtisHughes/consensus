@@ -1,23 +1,31 @@
 <template>
-  <li :class="[{ checked }, 'day-container']">
+  <div
+    role="gridcell"
+    :class="[
+      { checked, heated: heat > 0, past: disabled, 'is-today': highlighted },
+      'day-container',
+    ]"
+    :style="heatStyle"
+  >
     <button
       type="button"
       :class="[{ highlighted }, 'day']"
       :disabled="disabled"
+      :tabindex="focusable ? 0 : -1"
       :aria-pressed="checked"
       :aria-label="ariaLabel"
       @click="emit('select', day)"
+      @focus="emit('focus', day)"
     >
       <span class="day-number">{{ day }}</span>
-      <DotGroup :count="events.length" :checked="checked" :limit="limit" />
+      <span v-if="checked" class="pick-dot" aria-hidden="true" />
     </button>
-  </li>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { CalendarEvent } from './models';
-import DotGroup from './DotGroup.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -25,68 +33,133 @@ const props = withDefaults(
     label?: string;
     highlighted?: boolean;
     disabled?: boolean;
+    focusable?: boolean;
     events?: CalendarEvent[];
-    limit?: number;
+    max?: number;
   }>(),
   {
     label: undefined,
     highlighted: false,
     disabled: false,
-    limit: 4,
+    focusable: false,
     events: () => [],
+    max: 0,
   },
 );
 
 const emit = defineEmits<{
   select: [day: number];
+  focus: [day: number];
 }>();
+
+const MIN_HEAT = 20;
+const MAX_HEAT = 75;
 
 const checked = computed(() => props.events.some((event) => event.checked));
 
+const heat = computed(() => {
+  const count = props.events.length;
+  if (count === 0 || props.max === 0 || props.disabled) return 0;
+  return Math.round(MIN_HEAT + ((MAX_HEAT - MIN_HEAT) * count) / props.max);
+});
+
+const heatStyle = computed(() =>
+  heat.value === 0
+    ? undefined
+    : {
+        background: `color-mix(in srgb, var(--app-color, #ff8a8a) ${heat.value}%, var(--surface-color, #e8e8e8))`,
+      },
+);
+
 const ariaLabel = computed(() => {
   const count = props.events.length;
-  return `${props.label ?? props.day}, ${count} ${count === 1 ? 'vote' : 'votes'}`;
+  const parts = [props.label ?? String(props.day)];
+  if (props.highlighted) parts.push('today');
+  parts.push(`${count} ${count === 1 ? 'vote' : 'votes'}`);
+  return parts.join(', ');
 });
 </script>
 
 <style scoped lang="scss">
+.day-container {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius, 5px);
+  background: var(--surface-color, #e8e8e8);
+  transition:
+    background 0.2s,
+    transform 0.1s;
+
+  &.past {
+    background: none;
+  }
+
+  &.is-today {
+    box-shadow: inset 0 0 0 2px var(--primary-font-color, #2c3e50);
+
+    .day-number {
+      font-weight: bold;
+    }
+  }
+
+  &:has(.day:not(:disabled):active) {
+    transform: scale(0.94);
+  }
+}
+
 .day {
   position: absolute;
+  inset: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   box-sizing: border-box;
-  padding: 15%;
-  width: 100%;
-  height: 100%;
-  top: 0;
   margin: 0;
+  padding: 0 0 0.35em;
   border: none;
+  border-radius: inherit;
   background: none;
   color: inherit;
   font: inherit;
-  text-align: left;
   cursor: pointer;
+  transition: background 0.15s;
+
+  @media (hover: hover) {
+    &:not(:disabled):hover {
+      background: color-mix(in srgb, var(--primary-font-color, #2c3e50) 8%, transparent);
+    }
+  }
 
   &:disabled {
-    opacity: 0.4;
+    color: var(--secondary-font-color, #2c3e508a);
     cursor: default;
   }
 
   &:focus-visible {
-    outline: 2px solid var(--app-color, #ff8a8a);
-    outline-offset: -2px;
+    outline: 2px solid var(--primary-font-color, #2c3e50);
+    outline-offset: 2px;
   }
 
   .day-number {
-    flex-grow: 1;
+    line-height: 1;
+  }
+
+  .pick-dot {
+    position: absolute;
+    top: calc(50% + 0.6em);
+    left: 50%;
+    width: 0.35em;
+    height: 0.35em;
+    margin-left: -0.175em;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pick 0.25s ease-out;
   }
 }
 
-.day-container.checked {
-  background: #bcbcbc;
-}
-
-.day.highlighted {
-  color: var(--app-color, #ff8a8a);
+@keyframes pick {
+  from {
+    transform: scale(0);
+  }
 }
 </style>

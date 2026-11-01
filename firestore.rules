@@ -22,6 +22,11 @@ service cloud.firestore {
         && data.value.day is int && data.value.day >= 1 && data.value.day <= 31;
     }
 
+    function isValidParticipant(data) {
+      return data.keys().hasOnly(['name'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 50;
+    }
+
     // One response per author per date, so a repeated create becomes a (denied) update.
     function responseId(data) {
       return data.author + '_' + string(data.value.year) + '-' + string(data.value.month) + '-'
@@ -49,6 +54,19 @@ service cloud.firestore {
         && pollExists(poll);
       allow update: if false;
       allow delete: if isSignedIn() && resource.data.author == request.auth.uid;
+    }
+
+    // Each user can set and rename their own display name for a poll, keyed by their uid.
+    match /polls/{poll}/participants/{participant} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn()
+        && participant == request.auth.uid
+        && isValidParticipant(request.resource.data)
+        && pollExists(poll);
+      allow update: if isSignedIn()
+        && participant == request.auth.uid
+        && isValidParticipant(request.resource.data);
+      allow delete: if false;
     }
   }
 }

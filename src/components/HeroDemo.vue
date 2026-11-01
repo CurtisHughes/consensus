@@ -4,13 +4,18 @@
     <ol class="week">
       <li v-for="day in days" :key="day.number" :class="{ best: day.best }">
         <span class="weekday">{{ day.weekday[0] }}</span>
-        <span class="number">{{ day.number }}</span>
-        <span class="dots">
+        <span class="cell">
           <span
-            v-for="delay in day.delays"
-            :key="delay"
-            class="dot"
-            :style="{ '--dot-delay': `${delay}s` }"
+            v-for="layer in day.layers"
+            :key="layer.delay"
+            class="layer"
+            :style="{ '--layer-delay': `${layer.delay}s`, '--layer-opacity': layer.opacity }"
+          />
+          <span class="number">{{ day.number }}</span>
+          <span
+            v-if="day.mineDelay !== null"
+            class="pick-dot"
+            :style="{ '--pick-delay': `${day.mineDelay}s` }"
           />
         </span>
       </li>
@@ -20,33 +25,49 @@
 </template>
 
 <script setup lang="ts">
-const FIRST_DOT_DELAY = 0.9;
-const DOT_INTERVAL = 0.12;
+const FIRST_VOTE_DELAY = 0.9;
+const VOTE_INTERVAL = 0.18;
+// Same range as the calendar's shading, so the demo matches what voters see.
+const MIN_HEAT = 0.2;
+const MAX_HEAT = 0.75;
 
 const votes = [0, 1, 0, 2, 1, 3, 4];
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const maxVotes = Math.max(...votes);
+const myDay = votes.indexOf(maxVotes);
+const myVote = 1;
 
-// Dots appear round-robin across the week, so every day fills in gradually.
+// Votes arrive round-robin across the week, so every day shades in gradually.
 const delays: number[][] = votes.map(() => []);
 let order = 0;
 for (let round = 0; round < maxVotes; round += 1) {
   votes.forEach((count, index) => {
     if (count > round) {
-      delays[index]!.push(FIRST_DOT_DELAY + order * DOT_INTERVAL);
+      delays[index]!.push(FIRST_VOTE_DELAY + order * VOTE_INTERVAL);
       order += 1;
     }
   });
 }
 
-const lastDotDelay = FIRST_DOT_DELAY + (order - 1) * DOT_INTERVAL;
-const highlightDelay = `${lastDotDelay + 0.4}s`;
-const badgeDelay = `${lastDotDelay + 0.7}s`;
+function heat(count: number): number {
+  return count === 0 ? 0 : MIN_HEAT + ((MAX_HEAT - MIN_HEAT) * count) / maxVotes;
+}
+
+// Each vote fades in another layer of the app color. Their opacities are chosen so the
+// stacked layers add up to the calendar's shading for that many votes.
+function layerOpacity(count: number): number {
+  return 1 - (1 - heat(count)) / (1 - heat(count - 1));
+}
+
+const lastVoteDelay = FIRST_VOTE_DELAY + (order - 1) * VOTE_INTERVAL;
+const highlightDelay = `${lastVoteDelay + 0.4}s`;
+const badgeDelay = `${lastVoteDelay + 0.8}s`;
 
 const days = votes.map((count, index) => ({
   weekday: weekdays[index]!,
   number: 9 + index,
-  delays: delays[index]!,
+  layers: delays[index]!.map((delay, vote) => ({ delay, opacity: layerOpacity(vote + 1) })),
+  mineDelay: index === myDay ? delays[index]![myVote]! : null,
   best: count === maxVotes,
 }));
 const bestDay = days.find((day) => day.best)!;
@@ -76,22 +97,23 @@ const bestDay = days.find((day) => day.best)!;
   }
 }
 
-@keyframes highlight {
+@keyframes shade {
+  from {
+    opacity: 0;
+  }
   to {
-    background: var(--app-color, #ff8a8a);
-    color: white;
+    opacity: var(--layer-opacity);
   }
 }
 
-@keyframes invert {
-  to {
-    background: white;
+@keyframes pulse {
+  50% {
+    transform: scale(1.15);
   }
 }
 
 .demo {
   --highlight-delay: v-bind(highlightDelay);
-
   width: 300px;
   max-width: 100%;
   box-sizing: border-box;
@@ -120,10 +142,7 @@ const bestDay = days.find((day) => day.best)!;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 6px 0;
-    border-radius: 6px;
-    background: var(--surface-color, #e8e8e8);
+    gap: 6px;
   }
 
   .weekday {
@@ -131,35 +150,46 @@ const bestDay = days.find((day) => day.best)!;
     opacity: 0.6;
   }
 
+  .cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding-bottom: 5px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--surface-color, #e8e8e8);
+  }
+
+  .layer {
+    position: absolute;
+    inset: 0;
+    background: var(--app-color, #ff8a8a);
+    animation: shade 0.3s var(--layer-delay, 0s) ease-out both;
+  }
+
   .number {
+    position: relative;
     font-size: 14px;
   }
 
-  .dots {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 2px;
-    width: 26px;
-    min-height: 12px;
-  }
-
-  .dot {
+  .pick-dot {
+    position: absolute;
+    top: calc(50% + 7px);
+    left: 50%;
     width: 5px;
     height: 5px;
+    margin-left: -2.5px;
     border-radius: 50%;
-    background: var(--app-color, #ff8a8a);
-    animation: pop 0.35s var(--dot-delay, 0s) ease-out both;
+    background: currentColor;
+    animation: pop 0.35s var(--pick-delay, 0s) ease-out both;
   }
 
-  .best {
-    animation: highlight 0.4s var(--highlight-delay) ease-out forwards;
-
-    .dot {
-      animation:
-        pop 0.35s var(--dot-delay, 0s) ease-out both,
-        invert 0.4s var(--highlight-delay) ease-out forwards;
-    }
+  .best .cell {
+    animation: pulse 0.5s var(--highlight-delay) ease-in-out;
   }
 }
 

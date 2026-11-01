@@ -3,9 +3,13 @@ import type { DateValue, Response } from '@/models';
 export type Suggestion = {
   date: Date;
   count: number;
+  authors: string[];
 };
 
-/** Ranks upcoming dates by how many distinct people chose them, breaking ties by earliest date. */
+/**
+ * Ranks upcoming dates by how many distinct people chose them, breaking ties by earliest date.
+ * Pass `limit: Infinity` to get every upcoming date.
+ */
 export function suggestDates(
   responses: Response<DateValue>[],
   { today = new Date(), limit = 3 }: { today?: Date; limit?: number } = {},
@@ -24,6 +28,7 @@ export function suggestDates(
   return Array.from(authorsByDate, ([time, authors]) => ({
     date: new Date(time),
     count: authors.size,
+    authors: Array.from(authors),
   }))
     .sort((a, b) => b.count - a.count || a.date.getTime() - b.date.getTime())
     .slice(0, limit);

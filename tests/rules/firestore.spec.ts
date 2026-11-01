@@ -6,7 +6,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 
 const POLL_ID = 'poll';
 const value = { year: 2026, month: 10, day: 15 };
@@ -19,6 +19,10 @@ function db(uid: string) {
 
 function responseDoc(uid: string, id: string, pollId = POLL_ID) {
   return doc(db(uid), 'polls', pollId, 'responses', id);
+}
+
+function participantDoc(uid: string, id: string, pollId = POLL_ID) {
+  return doc(db(uid), 'polls', pollId, 'participants', id);
 }
 
 beforeAll(async () => {
@@ -111,5 +115,44 @@ describe('responses', () => {
     });
     await assertFails(deleteDoc(responseDoc('bob', 'alice_2026-10-15')));
     await assertSucceeds(deleteDoc(responseDoc('alice', 'alice_2026-10-15')));
+  });
+});
+
+describe('participants', () => {
+  it('allows users to set and rename their own name', async () => {
+    const ref = participantDoc('alice', 'alice');
+    await assertSucceeds(setDoc(ref, { name: 'Alice' }));
+    await assertSucceeds(setDoc(ref, { name: 'Ali' }));
+    await assertSucceeds(getDocs(collection(db('bob'), 'polls', POLL_ID, 'participants')));
+  });
+
+  it("rejects setting someone else's name", async () => {
+    await assertFails(setDoc(participantDoc('alice', 'bob'), { name: 'Bob' }));
+  });
+
+  it('rejects empty, overlong, or non-string names and extra fields', async () => {
+    const ref = participantDoc('alice', 'alice');
+    await assertFails(setDoc(ref, { name: '' }));
+    await assertFails(setDoc(ref, { name: 'a'.repeat(51) }));
+    await assertFails(setDoc(ref, { name: 42 }));
+    await assertFails(setDoc(ref, { name: 'Alice', extra: true }));
+  });
+
+  it('rejects names for a poll that does not exist', async () => {
+    await assertFails(setDoc(participantDoc('alice', 'alice', 'missing'), { name: 'Alice' }));
+  });
+
+  it('never allows names to be deleted', async () => {
+    const ref = participantDoc('alice', 'alice');
+    await assertSucceeds(setDoc(ref, { name: 'Alice' }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  it('rejects unauthenticated reads', async () => {
+    await assertFails(
+      getDocs(
+        collection(env.unauthenticatedContext().firestore(), 'polls', POLL_ID, 'participants'),
+      ),
+    );
   });
 });

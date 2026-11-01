@@ -26,7 +26,7 @@ describe('Create poll', () => {
     cy.createPoll('Camping 2030', 'Lets go outside!');
     cy.contains('h1', 'Camping 2030');
     cy.contains('p', 'Lets go outside!');
-    cy.contains('h2', 'Suggested Dates:');
+    cy.contains('h2', 'Results');
   });
 
   it('shows the poll link in the share box', () => {

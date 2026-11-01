@@ -38,21 +38,19 @@ describe('Responding to a poll', () => {
       .should('match', /1 vote$/);
   });
 
-  it('disables days in the past', () => {
+  it("doesn't navigate before the current month", () => {
     cy.get('button[aria-label="Previous month"]').click();
-    cy.get('button[aria-label="Previous month"]').click();
-    cy.get('button.day').should('have.length.greaterThan', 27);
-    cy.get('button.day:enabled').should('not.exist');
+    cy.get('button[aria-label="Previous month"]').should('be.disabled');
   });
 
-  it('keeps votes after a reload', () => {
+  it('keeps votes after a reload and opens on their month', () => {
     dayButton().click();
     cy.get('.suggestions li').should('have.length', 1);
 
     cy.reload();
-    cy.get('button[aria-label="Next month"]').click();
     dayCell().should('have.class', 'checked');
     cy.get('.suggestions li').should('contain.text', '1 / 1');
+    cy.get('.my-picks .chip').should('have.length', 1);
   });
 
   it('lists multiple chosen days as suggestions', () => {
@@ -63,7 +61,7 @@ describe('Responding to a poll', () => {
   });
 
   it('navigates between months', () => {
-    const heading = () => cy.get('.date-picker header h2');
+    const heading = () => cy.get('.date-picker header h3');
     heading()
       .invoke('text')
       .then((initial) => {
@@ -71,6 +69,22 @@ describe('Responding to a poll', () => {
         heading().invoke('text').should('not.eq', initial);
         cy.get('button[aria-label="Previous month"]').click();
         heading().should('have.text', initial);
+      });
+  });
+
+  it('moves between days with the keyboard', () => {
+    dayButton(/^10$/).focus().type('{rightarrow}');
+    cy.focused().find('.day-number').should('have.text', '11');
+    cy.focused().type('{downarrow}');
+    cy.focused().find('.day-number').should('have.text', '18');
+    cy.get('button.day[tabindex="0"]').should('have.length', 1);
+
+    cy.get('.date-picker header h3')
+      .invoke('text')
+      .then((initial) => {
+        cy.focused().type('{pagedown}');
+        cy.get('.date-picker header h3').invoke('text').should('not.eq', initial);
+        cy.focused().find('.day-number').should('have.text', '18');
       });
   });
 

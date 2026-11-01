@@ -12,54 +12,62 @@
     <template v-else>
       <h1>{{ poll.name }}</h1>
       <p v-if="poll.description" class="description">{{ poll.description }}</p>
+      <p v-if="people.size > 0" class="responded">
+        {{ people.size }} {{ people.size === 1 ? 'person has' : 'people have' }} responded
+      </p>
 
-      <section class="invite">
-        <h2 class="label">Invite others</h2>
+      <section v-if="inviteFirst" class="invite">
+        <h2 class="label">Share this link to get started</h2>
         <ShareTextButton :text="shareLinkText" :title="poll.name" />
       </section>
 
-      <BaseAlert v-if="saveFailed" class="alert" role="alert">
-        Whoops! Your vote wasn't saved. Please try again.
-      </BaseAlert>
-      <BaseAlert v-else-if="sync.slow" class="alert" role="status">
-        Still saving. Check your internet connection.
-      </BaseAlert>
-      <p class="hint">Tap the days you're free. Tap again to remove.</p>
-      <DatePicker ref="picker" :collection="eventCollection" @select="toggleResponse" />
+      <ParticipantName :name="myName" :suggestion="rememberedName" :save="saveName" />
 
-      <h2>Suggested Dates:</h2>
-      <p v-if="suggestions.length === 0" class="empty">
-        No votes yet. Be the first to pick a date!
-      </p>
-      <TransitionGroup v-else tag="ul" name="suggestion" class="suggestions">
-        <li
-          v-for="({ date, count }, index) in suggestions"
-          :key="date.getTime()"
-          :class="{ best: index === 0 }"
-        >
-          <button type="button" :title="`Show ${formatMonth(date)}`" @click="picker?.show(date)">
-            <span class="date">
-              {{ formatDate(date) }}
-              <span v-if="index === 0" class="badge">Best date</span>
-            </span>
-            <span class="count">{{ count }} / {{ authors.size }}</span>
-            <span class="bar" aria-hidden="true">
-              <span class="fill" :style="{ width: `${(count / authors.size) * 100}%` }" />
-            </span>
-          </button>
-        </li>
-      </TransitionGroup>
+      <section class="availability" aria-labelledby="availability-heading">
+        <h2 id="availability-heading">When are you free?</h2>
+        <BaseAlert v-if="saveFailed" class="alert" role="alert">
+          Whoops! Your vote wasn't saved. Please try again.
+        </BaseAlert>
+        <BaseAlert v-else-if="sync.slow" class="alert" role="status">
+          Still saving. Check your internet connection.
+        </BaseAlert>
+        <DatePicker ref="picker" :collection="eventCollection" @select="toggleResponse" />
+      </section>
+
+      <MyPicks
+        :picks="myPicks"
+        :saving="sync.syncing"
+        :failed="saveFailed"
+        @show="picker?.show($event)"
+        @remove="removePick"
+      />
+
+      <PollResults
+        :suggestions="suggestions"
+        :total="people.size"
+        :participants="participants"
+        :uid="uid"
+        @show="picker?.show($event)"
+      />
+
+      <section v-if="!inviteFirst" class="invite compact">
+        <h2 class="label">Know someone else who's coming? Share this poll</h2>
+        <ShareTextButton :text="shareLinkText" :title="poll.name" />
+      </section>
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
-import { useTemplateRef, watch } from 'vue';
+import { computed, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import DatePicker from '@/components/DatePicker/DatePicker.vue';
 import ShareTextButton from '@/components/ShareTextButton.vue';
 import BaseAlert from '@/components/BaseAlert.vue';
 import BaseSpinner from '@/components/BaseSpinner.vue';
+import MyPicks from '@/components/MyPicks.vue';
+import PollResults from '@/components/PollResults.vue';
+import ParticipantName from '@/components/ParticipantName.vue';
 import { usePoll } from '@/composables/usePoll';
 import { useSyncStore } from '@/stores/sync';
 
@@ -68,8 +76,26 @@ const sync = useSyncStore();
 const shareLinkText = window.location.href;
 const picker = useTemplateRef('picker');
 
-const { status, saveFailed, poll, eventCollection, authors, suggestions, toggleResponse } = usePoll(
-  route.params.id as string,
+const {
+  uid,
+  status,
+  saveFailed,
+  poll,
+  responses,
+  responsesLoaded,
+  participants,
+  myName,
+  rememberedName,
+  saveName,
+  eventCollection,
+  people,
+  suggestions,
+  myPicks,
+  toggleResponse,
+} = usePoll(route.params.id as string);
+
+const inviteFirst = computed(
+  () => poll.value.author === uid && responsesLoaded.value && responses.value.length === 0,
 );
 
 watch(
@@ -79,12 +105,24 @@ watch(
   },
 );
 
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' });
-}
+// Open on the best date's month if nobody has voted for anything this month.
+const stopOpeningBestMonth = watch(
+  () => status.value === 'ready' && responsesLoaded.value && picker.value !== null,
+  (loaded) => {
+    if (!loaded) return;
+    stopOpeningBestMonth();
+    const now = new Date();
+    const votedThisMonth = suggestions.value.some(
+      ({ date }) => date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth(),
+    );
+    const best = suggestions.value[0];
+    if (!votedThisMonth && best) picker.value?.show(best.date);
+  },
+  { flush: 'post' },
+);
 
-function formatMonth(date: Date): string {
-  return date.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+function removePick(date: Date) {
+  toggleResponse({ year: date.getFullYear(), month: date.getMonth(), day: date.getDate() });
 }
 </script>
 
@@ -102,6 +140,10 @@ main {
   .description {
     white-space: pre-line;
     overflow-wrap: anywhere;
+  }
+
+  .responded {
+    font-size: 14px;
   }
 
   .status {
@@ -123,98 +165,26 @@ main {
       color: var(--secondary-font-color, #2c3e508a);
       margin: 0 0 0.5rem;
     }
-  }
 
-  .hint {
-    margin-bottom: 0;
-  }
-}
+    &.compact {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color, #00000033);
 
-.suggestions {
-  display: grid;
-  gap: 8px;
-  padding: 0;
-
-  li {
-    list-style: none;
-  }
-
-  .suggestion-move {
-    transition: transform 0.35s ease;
-  }
-
-  .suggestion-enter-active {
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s ease;
-  }
-
-  .suggestion-enter-from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  button {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    row-gap: 6px;
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color, #00000033);
-    border-radius: var(--radius, 5px);
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s;
-
-    &:hover {
-      background: var(--surface-color, #e8e8e8);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--app-color, #ff8a8a);
-      outline-offset: 2px;
+      .label {
+        text-transform: none;
+        letter-spacing: normal;
+        font-weight: normal;
+      }
     }
   }
 
-  .count {
-    color: var(--secondary-font-color, #2c3e508a);
-  }
+  .availability {
+    margin: 1.5rem 0;
 
-  .badge {
-    margin-left: 6px;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: var(--app-color, #ff8a8a);
-    color: white;
-    font-size: 12px;
-    vertical-align: middle;
-  }
-
-  .bar {
-    grid-column: 1 / -1;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--surface-color, #e8e8e8);
-    overflow: hidden;
-  }
-
-  .fill {
-    display: block;
-    height: 100%;
-    background: var(--secondary-font-color, #2c3e508a);
-    transition: width 0.3s ease;
-  }
-
-  .best {
-    button {
-      border-color: var(--app-color, #ff8a8a);
-    }
-
-    .fill {
-      background: var(--app-color, #ff8a8a);
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 18px;
     }
   }
 }
