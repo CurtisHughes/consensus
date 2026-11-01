@@ -1,9 +1,16 @@
 <template>
   <li :class="[{ checked }, 'day-container']">
-    <div :class="[{ highlighted }, 'day']" @click="emit('select', day)">
-      <p>{{ day }}</p>
+    <button
+      type="button"
+      :class="[{ highlighted }, 'day']"
+      :disabled="disabled"
+      :aria-pressed="checked"
+      :aria-label="ariaLabel"
+      @click="emit('select', day)"
+    >
+      <span class="day-number">{{ day }}</span>
       <DotGroup :count="events.length" :checked="checked" :limit="limit" />
-    </div>
+    </button>
   </li>
 </template>
 
@@ -15,11 +22,17 @@ import DotGroup from './DotGroup.vue';
 const props = withDefaults(
   defineProps<{
     day: number;
+    label?: string;
     highlighted?: boolean;
+    disabled?: boolean;
     events?: CalendarEvent[];
+    limit?: number;
   }>(),
   {
+    label: undefined,
     highlighted: false,
+    disabled: false,
+    limit: 4,
     events: () => [],
   },
 );
@@ -28,9 +41,12 @@ const emit = defineEmits<{
   select: [day: number];
 }>();
 
-const limit = window.screen.width > 525 ? 4 : 3;
-
 const checked = computed(() => props.events.some((event) => event.checked));
+
+const ariaLabel = computed(() => {
+  const count = props.events.length;
+  return `${props.label ?? props.day}, ${count} ${count === 1 ? 'vote' : 'votes'}`;
+});
 </script>
 
 <style scoped lang="scss">
@@ -38,19 +54,32 @@ const checked = computed(() => props.events.some((event) => event.checked));
   position: absolute;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   padding: 15%;
-  width: 70%;
-  height: 70%;
+  width: 100%;
+  height: 100%;
   top: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 
-  p {
-    margin: 0;
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-color, #cb89ff);
+    outline-offset: -2px;
+  }
+
+  .day-number {
     flex-grow: 1;
   }
-}
-
-.day-container {
-  cursor: pointer;
 }
 
 .day-container.checked {

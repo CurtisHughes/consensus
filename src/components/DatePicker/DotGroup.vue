@@ -1,10 +1,10 @@
 <template>
-  <div class="dots">
-    <div class="count">
+  <span class="dots" aria-hidden="true">
+    <span class="count">
       {{ count > limit ? `+${count - limit}` : null }}
-    </div>
-    <div v-for="i in Math.min(count, limit)" :key="i" :class="[{ checked }, 'dot']" />
-  </div>
+    </span>
+    <span v-for="i in Math.min(count, limit)" :key="i" :class="[{ checked }, 'dot']" />
+  </span>
 </template>
 
 <script setup lang="ts">

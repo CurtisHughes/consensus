@@ -18,8 +18,18 @@ service cloud.firestore {
         && data.value is map
         && data.value.keys().hasOnly(['year', 'month', 'day'])
         && data.value.year is int && data.value.year >= 2000 && data.value.year <= 2200
-        && data.value.month is int && data.value.month >= 0 && data.value.month <= 12
+        && data.value.month is int && data.value.month >= 0 && data.value.month <= 11
         && data.value.day is int && data.value.day >= 1 && data.value.day <= 31;
+    }
+
+    // One response per author per date, so a repeated create becomes a (denied) update.
+    function responseId(data) {
+      return data.author + '_' + string(data.value.year) + '-' + string(data.value.month) + '-'
+        + string(data.value.day);
+    }
+
+    function pollExists(poll) {
+      return exists(/databases/$(database)/documents/polls/$(poll));
     }
 
     // Polls can be read by id but never listed, and are immutable once created.
@@ -33,7 +43,10 @@ service cloud.firestore {
     // Responses can be created by their author, and deleted by their author. They are never edited.
     match /polls/{poll}/responses/{response} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && isValidResponse(request.resource.data);
+      allow create: if isSignedIn()
+        && isValidResponse(request.resource.data)
+        && response == responseId(request.resource.data)
+        && pollExists(poll);
       allow update: if false;
       allow delete: if isSignedIn() && resource.data.author == request.auth.uid;
     }
