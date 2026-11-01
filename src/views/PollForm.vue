@@ -1,9 +1,10 @@
 <template>
   <main>
-    <Alert v-if="error" class="alert">Whoops! Something went wrong.</Alert>
-    <form @submit.prevent="handleSubmit" :style="{ opacity: (loading) ? '65%' : '100%' }">
+    <BaseAlert v-if="error" class="alert">Whoops! Something went wrong.</BaseAlert>
+    <form :style="{ opacity: loading ? '65%' : '100%' }" @submit.prevent="handleSubmit">
       <label for="event">Event Name:</label>
       <TextInput
+        id="event"
         v-model="name"
         :disabled="loading"
         required
@@ -12,7 +13,8 @@
       />
 
       <label for="description">Description:</label>
-      <Textarea
+      <TextArea
+        id="description"
         v-model="description"
         required
         :disabled="loading"
@@ -22,65 +24,53 @@
         placeholder="Let's go to outside!"
       />
 
-      <Button type="submit" :disabled="loading">
-        CREATE
-      </Button>
+      <BaseButton type="submit" :disabled="loading"> CREATE </BaseButton>
     </form>
-    <span class="overlay" v-if="loading">
-      <Spinner />
+    <span v-if="loading" class="overlay">
+      <BaseSpinner />
     </span>
   </main>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import Button from '@/components/Button.vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { addDoc, collection } from 'firebase/firestore';
+import BaseButton from '@/components/BaseButton.vue';
 import TextInput from '@/components/TextInput.vue';
-import Textarea from '@/components/Textarea.vue';
-import Spinner from '@/components/Spinner.vue';
-import Alert from '@/components/Alert.vue';
+import TextArea from '@/components/TextArea.vue';
+import BaseSpinner from '@/components/BaseSpinner.vue';
+import BaseAlert from '@/components/BaseAlert.vue';
 import database from '@/gateways/database';
 import auth from '@/gateways/authentication';
-import analytics from '@/gateways/analytics';
-import { Poll } from '@/models';
+import { logEvent } from '@/gateways/analytics';
+import type { Poll } from '@/models';
 
-@Component({
-  components: {
-    Alert,
-    Button,
-    TextInput,
-    Textarea,
-    Spinner,
-  },
-})
-export default class PollForm extends Vue {
-  private name = '';
+const router = useRouter();
 
-  private description = '';
+const name = ref('');
+const description = ref('');
+const error = ref(false);
+const loading = ref(false);
 
-  private error = false;
-
-  private loading = false;
-
-  private async handleSubmit() {
-    try {
-      this.loading = true;
-      const poll: Poll = {
-        name: this.name,
-        description: this.description,
-        author: auth.currentUser ? auth.currentUser.uid : '',
-      };
-      const { id } = await database.collection('polls').add(poll);
-      analytics.logEvent('action', { name: 'create_poll', user: auth.currentUser?.uid });
-      this.$router.push({
-        name: 'polls-id',
-        params: { id },
-      });
-    } catch (err) {
-      this.loading = false;
-      this.error = true;
-      analytics.logEvent('error', { name: 'create_poll', user: auth.currentUser?.uid, error: err });
-    }
+async function handleSubmit() {
+  try {
+    loading.value = true;
+    const poll: Poll = {
+      name: name.value,
+      description: description.value,
+      author: auth.currentUser ? auth.currentUser.uid : '',
+    };
+    const { id } = await addDoc(collection(database, 'polls'), poll);
+    logEvent('action', { name: 'create_poll', user: auth.currentUser?.uid });
+    await router.push({
+      name: 'polls-id',
+      params: { id },
+    });
+  } catch (err) {
+    loading.value = false;
+    error.value = true;
+    logEvent('error', { name: 'create_poll', user: auth.currentUser?.uid, error: err });
   }
 }
 </script>
@@ -110,7 +100,7 @@ main {
     align-items: center;
     justify-content: center;
 
-    button[type="submit"] {
+    button[type='submit'] {
       justify-self: right;
     }
   }

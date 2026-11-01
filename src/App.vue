@@ -6,10 +6,10 @@
 </template>
 
 <style lang="scss">
-@import url(//fonts.googleapis.com/css?family=Montserrat);
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
 
 #app {
-  --app-color: #FF8A8A;
+  --app-color: #ff8a8a;
   --primary-font-color: #2c3e50;
   --secondary-font-color: #2c3e508a;
 

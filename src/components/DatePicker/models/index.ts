@@ -2,36 +2,30 @@ export type CalendarDate = {
   year: number;
   day: number;
   month: number;
-}
+};
 
 export type CalendarEvent = {
   checked?: boolean;
-}
+};
 
 export class CalendarEventCollection {
   private values: { [date: string]: CalendarEvent[] } = {};
 
   public add(date: CalendarDate, event: CalendarEvent) {
-    const formattedDate = this.format(date);
-    this.values[formattedDate] = [
-      ...(this.values[formattedDate] || []),
-      event,
-    ];
+    const formattedDate = CalendarEventCollection.format(date);
+    this.values[formattedDate] = [...(this.values[formattedDate] || []), event];
     return this;
   }
 
-  public get(date: CalendarDate) {
-    const formattedDate = this.format(date);
-    return this.values[formattedDate];
+  public get(date: CalendarDate): CalendarEvent[] | undefined {
+    return this.values[CalendarEventCollection.format(date)];
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  private format({ day, month, year }: CalendarDate) {
+  private static format({ day, month, year }: CalendarDate) {
     return `${year}-${month}-${day}`;
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  private parse(date: string) {
+  private static parse(date: string): CalendarDate {
     const [year, month, day] = date.split('-');
     return {
       year: Number(year),
@@ -40,16 +34,12 @@ export class CalendarEventCollection {
     };
   }
 
-  /* eslint-disable */
   *[Symbol.iterator]() {
-    const keys = Object.keys(this.values);
-
-    for (const key of keys) {
+    for (const [key, events] of Object.entries(this.values)) {
       yield {
-        events: this.values[key],
-        date: this.parse(key),
+        events,
+        date: CalendarEventCollection.parse(key),
       };
     }
   }
-  /* eslint-enable */
 }

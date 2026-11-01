@@ -1,6 +1,4 @@
-type Response<T> = {
-    author: string;
-    value: T;
-}
-
-export default Response;
+export type Response<T> = {
+  author: string;
+  value: T;
+};

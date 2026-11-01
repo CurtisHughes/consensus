@@ -1,14 +1,12 @@
 <template>
   <div class="date-picker">
     <header>
-      <button @click="prev">
-        <Arrow inverse />
+      <button aria-label="Previous month" @click="prev">
+        <DatePickerArrow inverse />
       </button>
-      <h1>
-        {{ date.toLocaleString("default", { month: "long" }) }} {{ year }}
-      </h1>
-      <button @click="next">
-        <Arrow />
+      <h1>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h1>
+      <button aria-label="Next month" @click="next">
+        <DatePickerArrow />
       </button>
     </header>
 
@@ -38,80 +36,63 @@
 
     <ul class="day-list">
       <li v-for="day in offset" :key="`prev-month-day-${day}`"></li>
-      <Day
-        v-for="day in days" :key="`day-${day}`"
+      <DatePickerDay
+        v-for="day in days"
+        :key="`day-${day}`"
         :day="day"
         :highlighted="isToday(day)"
-        :events="(collection.get({ day, month, year }) || [])"
-        @click="onClick"
+        :events="collection.get({ day, month, year }) || []"
+        @select="onSelect"
       />
     </ul>
   </div>
 </template>
 
-<script lang="ts">
-import {
-  Component,
-  Emit,
-  Prop,
-  Vue,
-} from 'vue-property-decorator';
-import Day from './Day.vue';
-import { CalendarEventCollection } from './models';
-import Arrow from './Arrow.vue';
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import DatePickerDay from './DatePickerDay.vue';
+import DatePickerArrow from './DatePickerArrow.vue';
+import { CalendarEventCollection, type CalendarDate } from './models';
 
-@Component({
-  components: {
-    Arrow,
-    Day,
+withDefaults(
+  defineProps<{
+    collection?: CalendarEventCollection;
+  }>(),
+  {
+    collection: () => new CalendarEventCollection(),
   },
-})
-export default class DatePicker extends Vue {
-  @Prop({ default: {} })
-  private collection!: CalendarEventCollection;
+);
 
-  private today: Date = new Date();
+const emit = defineEmits<{
+  select: [date: CalendarDate];
+}>();
 
-  private date: Date = new Date();
+const today = new Date();
+const date = ref(new Date());
 
-  private next() {
-    this.date = new Date(this.year, this.month + 1);
-  }
+const year = computed(() => date.value.getFullYear());
+const month = computed(() => date.value.getMonth());
+const offset = computed(() => new Date(year.value, month.value).getDay());
+const days = computed(() => new Date(year.value, month.value + 1, 0).getDate());
 
-  private prev() {
-    this.date = new Date(this.year, this.month - 1);
-  }
+function next() {
+  date.value = new Date(year.value, month.value + 1);
+}
 
-  private get year() {
-    return this.date.getFullYear();
-  }
+function prev() {
+  date.value = new Date(year.value, month.value - 1);
+}
 
-  private get month() {
-    return this.date.getMonth();
-  }
+function isToday(day: number): boolean {
+  return (
+    today.getFullYear() === year.value &&
+    today.getMonth() === month.value &&
+    today.getDate() === day
+  );
+}
 
-  private get offset() {
-    return new Date(this.year, this.month).getDay();
-  }
-
-  private get days() {
-    return new Date(this.year, this.month + 1, 0).getDate();
-  }
-
-  private isToday(day: number): boolean {
-    return this.today.getFullYear() === this.year
-      && this.today.getMonth() === this.month
-      && this.today.getDate() === day;
-  }
-
-  @Emit('input')
-  private onClick(day: number) {
-    return {
-      year: this.year,
-      month: this.month,
-      day,
-    };
-  }
+function onSelect(day: number) {
+  emit('select', { year: year.value, month: month.value, day });
 }
 </script>
 
@@ -165,7 +146,7 @@ li {
   font-size: #{'min(4vw, 20px)'};
 
   li {
-    background: #E8E8E8;
+    background: #e8e8e8;
     padding-bottom: 100%;
   }
 }
