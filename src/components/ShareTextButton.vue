@@ -1,8 +1,9 @@
 <template>
   <div class="share-button">
     <div class="text">{{ text }}</div>
-    <button aria-label="Copy link" @click="copy">
+    <button aria-label="Copy link" :class="{ copied }" @click="copy">
       <svg
+        v-if="!copied"
         width="20"
         height="20"
         viewBox="0 0 20 20"
@@ -17,18 +18,48 @@
           fill-opacity="0.3"
         />
       </svg>
+      <svg
+        v-else
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 10.5l4 4 8-9"
+          stroke="#2e9e5b"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, ref } from 'vue';
+
 const props = defineProps<{
   text: string;
 }>();
 
-function copy() {
-  void navigator.clipboard.writeText(props.text);
+const copied = ref(false);
+let timer: ReturnType<typeof setTimeout> | undefined;
+
+async function copy() {
+  try {
+    await navigator.clipboard.writeText(props.text);
+  } catch {
+    return;
+  }
+  copied.value = true;
+  clearTimeout(timer);
+  timer = setTimeout(() => (copied.value = false), 1500);
 }
+
+onBeforeUnmount(() => clearTimeout(timer));
 </script>
 
 <style lang="scss" scoped>
@@ -40,7 +71,11 @@ function copy() {
   height: 40px;
 
   .text {
-    overflow-y: auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
     align-self: center;
     padding: 10px;
     color: var(--secondary-font-color, #2c3e508a);
@@ -54,6 +89,11 @@ function copy() {
     background: #c4c4c44d;
     margin: 0;
     cursor: pointer;
+    transition: background 0.2s;
+
+    &.copied {
+      background: #2e9e5b26;
+    }
   }
 }
 </style>
