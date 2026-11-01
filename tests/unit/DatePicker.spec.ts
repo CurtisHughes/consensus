@@ -53,6 +53,23 @@ describe('DatePicker.vue', () => {
     expect(wrapper.emitted('select')).toEqual([[{ year: 2026, month: 10, day: 1 }]]);
   });
 
+  it('shows the month of a given date', async () => {
+    const wrapper = mount(DatePicker);
+    wrapper.vm.show(new Date(2027, 1, 14));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('header h2').text()).toBe('February 2027');
+    expect(wrapper.findAll('.day')).toHaveLength(28);
+  });
+
+  it('offers a Today button only when away from the current month', async () => {
+    const wrapper = mount(DatePicker);
+    expect(wrapper.find('.today').exists()).toBe(false);
+    await wrapper.get('button[aria-label="Next month"]').trigger('click');
+    await wrapper.get('.today').trigger('click');
+    expect(wrapper.get('header h2').text()).toBe('October 2026');
+    expect(wrapper.find('.today').exists()).toBe(false);
+  });
+
   it('marks days that have a checked event', () => {
     const collection = new CalendarEventCollection().add(
       { year: 2026, month: 9, day: 3 },

@@ -1,6 +1,6 @@
 <template>
-  <div class="share-button">
-    <div class="text">{{ text }}</div>
+  <div :class="['share-button', { 'can-share': canShare }]">
+    <div ref="textElement" class="text">{{ text }}</div>
     <button aria-label="Copy link" :class="{ copied }" @click="copy">
       <svg
         v-if="!copied"
@@ -35,28 +35,74 @@
         />
       </svg>
     </button>
+    <button v-if="canShare" aria-label="Share link" class="share" @click="share">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10 2.5v10M6 6.5l4-4 4 4M4 10.5v5.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5v-5.5"
+          stroke="black"
+          stroke-opacity="0.3"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+    <span class="status" role="status">{{ status }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, ref, useTemplateRef } from 'vue';
 
 const props = defineProps<{
   text: string;
+  title?: string;
 }>();
 
+const canShare = typeof navigator.share === 'function';
+const textElement = useTemplateRef('textElement');
 const copied = ref(false);
+const status = ref('');
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 async function copy() {
+  clearTimeout(timer);
   try {
     await navigator.clipboard.writeText(props.text);
   } catch {
+    selectText();
+    status.value = "Couldn't copy automatically. The link is selected, so copy it manually.";
+    timer = setTimeout(() => (status.value = ''), 4000);
     return;
   }
   copied.value = true;
-  clearTimeout(timer);
-  timer = setTimeout(() => (copied.value = false), 1500);
+  status.value = 'Link copied';
+  timer = setTimeout(() => {
+    copied.value = false;
+    status.value = '';
+  }, 1500);
+}
+
+async function share() {
+  try {
+    await navigator.share({ title: props.title, url: props.text });
+  } catch (err) {
+    // AbortError means the user closed the share sheet.
+    if (err instanceof DOMException && err.name === 'AbortError') return;
+    await copy();
+  }
+}
+
+function selectText() {
+  const selection = window.getSelection();
+  if (!textElement.value || !selection) return;
+  selection.selectAllChildren(textElement.value);
 }
 
 onBeforeUnmount(() => clearTimeout(timer));
@@ -64,11 +110,18 @@ onBeforeUnmount(() => clearTimeout(timer));
 
 <style lang="scss" scoped>
 .share-button {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 40px;
   width: 100%;
-  border: 1px solid #00000033;
+  border: 1px solid var(--border-color, #00000033);
+  border-radius: var(--radius, 5px);
+  overflow: hidden;
   height: 40px;
+
+  &.can-share {
+    grid-template-columns: 1fr 40px 40px;
+  }
 
   .text {
     min-width: 0;
@@ -91,9 +144,31 @@ onBeforeUnmount(() => clearTimeout(timer));
     cursor: pointer;
     transition: background 0.2s;
 
+    &:hover {
+      background: #c4c4c480;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--app-color, #ff8a8a);
+      outline-offset: -2px;
+    }
+
     &.copied {
       background: #2e9e5b26;
     }
+  }
+
+  .share {
+    border-left: 1px solid var(--border-color, #00000033);
+  }
+
+  .status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 </style>

@@ -5,6 +5,15 @@ describe('Home page', () => {
     cy.contains('p', 'create, vote, share. no logins required');
     cy.contains('button', 'CREATE POLL').should('be.visible');
   });
+
+  it('links to the privacy page from the footer', () => {
+    cy.visit('/');
+    cy.contains('footer a', 'Privacy').click();
+    cy.location('pathname').should('eq', '/privacy');
+    cy.contains('h1', 'Privacy');
+    cy.contains('a', 'Back to home').click();
+    cy.location('pathname').should('eq', '/');
+  });
 });
 
 describe('Unknown pages', () => {

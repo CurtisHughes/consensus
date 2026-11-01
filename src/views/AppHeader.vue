@@ -56,7 +56,7 @@ header {
   }
 
   .circle {
-    background: var(--app-color, #cb89ff);
+    background: var(--app-color, #ff8a8a);
     width: 20px;
     height: 20px;
     margin-right: 30px;

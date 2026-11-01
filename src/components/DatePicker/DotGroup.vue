@@ -51,13 +51,11 @@ withDefaults(
     background: #bcbcbc;
     border-radius: 50%;
     border: 0.5px solid #00000052;
+    animation: grow 0.25s cubic-bezier(0, 0, 0, 2);
   }
 
-  .dot.checked {
-    &:last-child {
-      background: var(--app-color, #cb89ff);
-      animation: grow 0.25s cubic-bezier(0, 0, 0, 2);
-    }
+  .dot.checked:last-child {
+    background: var(--app-color, #ff8a8a);
   }
 
   .count {

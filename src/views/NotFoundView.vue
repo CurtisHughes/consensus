@@ -18,7 +18,7 @@ main {
   }
 
   a {
-    color: var(--app-color, #cb89ff);
+    color: var(--app-color, #ff8a8a);
   }
 }
 </style>

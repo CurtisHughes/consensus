@@ -14,7 +14,7 @@ withDefaults(
     color?: string;
   }>(),
   {
-    color: 'var(--app-color, #CB89FF)',
+    color: 'var(--app-color, #FF8A8A)',
   },
 );
 </script>

@@ -12,9 +12,10 @@ describe('BaseButton.vue', () => {
     expect(wrapper.get('button').attributes('style')).toContain('background: blue');
   });
 
-  it('has no background when inverted', () => {
-    const wrapper = mount(BaseButton, { props: { inverted: true } });
-    expect(wrapper.get('button').attributes('style')).toContain('background: none');
+  it('drops the background color when inverted', () => {
+    const wrapper = mount(BaseButton, { props: { color: 'blue', inverted: true } });
+    expect(wrapper.get('button').classes()).toContain('inverted');
+    expect(wrapper.get('button').attributes('style')).toBeUndefined();
   });
 
   it('emits a single click event when clicked', async () => {

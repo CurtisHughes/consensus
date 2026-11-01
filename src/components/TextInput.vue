@@ -8,7 +8,9 @@ const model = defineModel<string>({ default: '' });
 
 <style scoped lang="scss">
 input {
-  border: 1px solid #ced4da;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--input-border-color, #ced4da);
   border-radius: 0.25rem;
   color: var(--primary-font-color, #2c3e50);
   font-size: 16px;
@@ -26,7 +28,8 @@ input {
   }
 
   &:focus {
-    border-color: var(--app-color, #cb89ff);
+    border-color: var(--app-color, #ff8a8a);
+    box-shadow: var(--focus-ring, 0 0 0 3px #ff8a8a40);
   }
 }
 </style>

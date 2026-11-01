@@ -73,7 +73,7 @@ const ariaLabel = computed(() => {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--app-color, #cb89ff);
+    outline: 2px solid var(--app-color, #ff8a8a);
     outline-offset: -2px;
   }
 
@@ -87,6 +87,6 @@ const ariaLabel = computed(() => {
 }
 
 .day.highlighted {
-  color: var(--app-color, #cb89ff);
+  color: var(--app-color, #ff8a8a);
 }
 </style>

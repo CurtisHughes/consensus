@@ -14,6 +14,9 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
+    meta: {
+      title: 'Signing in',
+    },
   },
   {
     path: '/polls',
@@ -24,6 +27,7 @@ const routes: RouteRecordRaw[] = [
     },
     meta: {
       requiresAuth: true,
+      title: 'Create a poll',
     },
   },
   {
@@ -35,6 +39,18 @@ const routes: RouteRecordRaw[] = [
     },
     meta: {
       requiresAuth: true,
+      title: 'Poll',
+    },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    components: {
+      header: () => import('@/views/AppHeader.vue'),
+      default: () => import('@/views/PrivacyView.vue'),
+    },
+    meta: {
+      title: 'Privacy',
     },
   },
   {
@@ -43,6 +59,9 @@ const routes: RouteRecordRaw[] = [
     components: {
       header: () => import('@/views/AppHeader.vue'),
       default: () => import('@/views/NotFoundView.vue'),
+    },
+    meta: {
+      title: 'Page not found',
     },
   },
 ];
@@ -61,6 +80,11 @@ router.beforeEach(async (to) => {
   }
   logEvent('view', { name: String(to.name) });
   return true;
+});
+
+router.afterEach((to) => {
+  const { title } = to.meta;
+  document.title = typeof title === 'string' ? `${title} · Consensus` : 'Consensus';
 });
 
 // Firebase signs the user out if their account is deleted or disabled mid-session. Send them

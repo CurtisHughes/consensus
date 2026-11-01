@@ -4,7 +4,10 @@
       <button aria-label="Previous month" @click="prev">
         <DatePickerArrow inverse />
       </button>
-      <h2>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h2>
+      <div class="title">
+        <h2>{{ date.toLocaleString('default', { month: 'long' }) }} {{ year }}</h2>
+        <button v-if="!showingToday" type="button" class="today" @click="show(today)">Today</button>
+      </div>
       <button aria-label="Next month" @click="next">
         <DatePickerArrow />
       </button>
@@ -90,6 +93,16 @@ function prev() {
   date.value = new Date(year.value, month.value - 1);
 }
 
+function show(target: Date) {
+  date.value = new Date(target.getFullYear(), target.getMonth());
+}
+
+const showingToday = computed(
+  () => today.getFullYear() === year.value && today.getMonth() === month.value,
+);
+
+defineExpose({ show });
+
 function isToday(day: number): boolean {
   return (
     today.getFullYear() === year.value &&
@@ -128,11 +141,37 @@ header {
   align-items: center;
   margin: 0;
 
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   h2 {
     font-size: #{'min(5vw, 22.5px)'};
   }
 
-  button {
+  .today {
+    padding: 2px 10px;
+    border: 1px solid var(--border-color, #00000033);
+    border-radius: 999px;
+    background: white;
+    color: var(--secondary-font-color, #2c3e508a);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--primary-font-color, #2c3e50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--app-color, #ff8a8a);
+      outline-offset: 2px;
+    }
+  }
+
+  > button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -166,7 +205,7 @@ li {
   font-size: #{'min(4vw, 20px)'};
 
   li {
-    background: #e8e8e8;
+    background: var(--surface-color, #e8e8e8);
     padding-bottom: 100%;
   }
 }
